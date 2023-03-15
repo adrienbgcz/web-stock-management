@@ -12,27 +12,22 @@
         <v-card-title>
           <span class="text-h6 text-center">Ajouter un produit</span>
         </v-card-title>
+
         <v-card-text>
           <v-container>
-            <v-row v-for="inputLabel in inputLabelsAndApiNameComputed" :key="inputLabel.apiName">
+            <v-row v-for="inputLabel in inputLabelsAndApiName" :key="inputLabel.apiName">
               <v-col cols="12">
                 <v-text-field
                     :label="inputLabel.label + ' *'"
                     :placeholder="inputLabel.label"
-                    :error="isError(inputLabel.apiName)"
+                    :error="inputLabelsFormatted[inputLabel.apiName] ? !inputLabelsFormatted[inputLabel.apiName].isValidatedData : false"
                     outlined
                     required
-                    v-model="dataFormatted[inputLabel.apiName].value"
+                    v-model="inputLabelsFormatted[inputLabel.apiName].value"
                     @input="validInput(inputLabel.type, inputLabelsFormatted[inputLabel.apiName].value, inputLabel.apiName, inputLabel.label)"
-
                 ></v-text-field>
-<!--                @input="validInput(inputLabel.type, inputLabelsFormatted[inputLabel.apiName])"-->
               </v-col>
             </v-row>
-<!--            {{errorsComputed.length}}-->
-<!--            <div v-if="errorsComputed.length !== 0">
-              {{this.errorsComputed}}
-            </div>-->
           </v-container>
           <small>* Obligatoire</small>
         </v-card-text>
@@ -67,10 +62,12 @@ export default {
   components: {FloatingButton},
   data: () => ({
     dialog: false,
-    inputLabelsFormatted: {},
+    inputLabelsFormatted: {
+
+    },
     isValidatedDataForm: false,
     isFound: false,
-    errors: []
+    errors: [],
   }),
   props: {
     inputLabelsAndApiName: {
@@ -78,82 +75,38 @@ export default {
       required: true
     }
   },
-  computed: {
-    numberOfInputs() {
-      this.inputLabelsAndApiName.length
-    },
-    dataFormatted() {
-      this.inputLabelsAndApiName.forEach((element) => {
-        this.inputLabelsFormatted[element.apiName] = {
-          value: "",
-          isValidatedData: false
-        }
-      })
-      console.log("DATA FORMATTED - INPUT LABEL FORMATTED", this.inputLabelsFormatted)
-      return this.inputLabelsFormatted
-    },
-    inputLabelsAndApiNameComputed() {
-      return this.inputLabelsAndApiName
-    },
-    errorsComputed() {
-      return this.errors
-    },
-    isError(apiName) {
-      return this.inputLabelsFormatted[apiName] ? !this.inputLabelsFormatted[apiName].isValidatedData : true
-    }
-  },
   methods: {
-    /*formatPayload(apiName) {
-      console.log(this.inputLabelsFormatted)
-    },*/
     validInput(type, value, apiName, label) {
-      console.log("TYPE", type)
-      console.log("VALUE", value)
-      console.log("FIELD", apiName)
-      console.log(this.dataFormatted)
+      console.log(this.inputLabelsFormatted)
 
       let regex = ""
       this.isFound = false
+
       switch(type) {
         case "string" :
           regex=/^[a-zA-Zéèàêïî]{2,20}$/
-          this.setValidatedData(value, regex, apiName, label, type)
+          this.setValidatedData(value, regex, apiName)
           break;
         case "number" :
           regex=/^[0-9]{1,4}$/
-          this.setValidatedData(value, regex, apiName, label, type)
+          this.setValidatedData(value, regex, apiName)
           break;
       }
     },
-    setValidatedData(value, regex, apiName, label, type) {
-      this.isFound = value.match(regex)
-      if(this.isFound != null) {
+    setValidatedData(value, regex, apiName) {
+      this.isFound = Boolean(value.match(regex))
+      if(this.isFound) {
         this.inputLabelsFormatted[apiName].isValidatedData = true
-        /*if(type === 'string') {
-          this.errors.push(`${label} must contain between 2 and 20 characters and only letters. \n`)
-        } else if(type === 'number') {
-          this.errors.push(`${label} must contain only numbers. \n`)
-        }*/
       } else {
         this.inputLabelsFormatted[apiName].isValidatedData = false
       }
-
     },
-    /*isError(apiName) {
-      return this.inputLabelsFormatted[apiName] ? !this.inputLabelsFormatted[apiName].isValidatedData : true
-    }*/
-
   },
-  mounted() {
-    console.log("INPUT LABEL AND API NAME", this.inputLabelsAndApiName)
-    /*this.inputLabelsAndApiName.forEach((element, index) => {
-      /!*const apiName = this.inputLabelsAndApiName[index].apiName*!/
-      this.inputLabelsFormatted[element.apiName] = {
-        value: "",
-        isValidatedData: false
-      }
-    })*/
-    /*console.log("INPUT LABEL FORMATTED MOUNTED",this.inputLabelsFormatted)*/
+  beforeMount() {
+    console.log("INPUT LABEL AND API NAME", this.inputLabelsFormatted)
+    this.inputLabelsAndApiName.forEach((element) => {
+      this.$set(this.inputLabelsFormatted, element.apiName, {value: "",isValidatedData: false})
+    })
   }
 }
 </script>
@@ -168,6 +121,4 @@ export default {
   font-weight: bold;
 
 }
-
-
 </style>

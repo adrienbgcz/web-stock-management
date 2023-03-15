@@ -23,6 +23,13 @@ const routes = [
     component: function () {
       return import('../views/CreateBuyOrSale.vue')
     }
+  },
+  {
+    path: '/product-details/:id',
+    name: 'ProductDetails',
+    component: function () {
+      return import('../views/ProductDetails.vue')
+    }
   }
 ]
 

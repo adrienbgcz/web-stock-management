@@ -4,11 +4,9 @@
         color="#6750A4"
         dense
         dark
-        class="pt-2 pb-2"
+        class="pt-2 pb-2 mb-10"
         height="auto"
-
     >
-
 
       <v-toolbar-title>Stock Management</v-toolbar-title>
 
@@ -50,22 +48,21 @@
       <v-spacer></v-spacer>
     </v-app-bar>
 
-    <v-main>
+    <v-main style="width: 85%; margin: auto">
       <router-view/>
     </v-main>
 
-    <div style="height: 400px">TEST</div>
   </v-app>
 
 
 </template>
 
 <script>
+
 export default {
   name: "App",
 
   data: () => ({
-    //
   }),
 };
 </script>
@@ -88,5 +85,9 @@ export default {
 
 .v-application--wrap {
   min-height: 0;
+}
+
+* {
+  text-decoration: inherit;
 }
 </style>

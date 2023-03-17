@@ -11,10 +11,10 @@ const routes = [
     component: Products
   },
   {
-    path: '/contacts',
-    name: 'Contacts',
+    path: '/customers',
+    name: 'Customers',
     component: function () {
-      return import('../views/Contacts.vue')
+      return import('../views/Customers.vue')
     }
   },
   {
@@ -30,7 +30,15 @@ const routes = [
     component: function () {
       return import('../views/ProductDetails.vue')
     }
-  }
+  },
+  {
+    path: '/customer-details/:id',
+    name: 'CustomerDetails',
+    component: function () {
+      return import('../views/CustomerDetails.vue')
+    }
+  },
+
 ]
 
 const router = new VueRouter({

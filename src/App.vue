@@ -24,7 +24,7 @@
       <v-spacer></v-spacer>
 
 
-      <router-link to="/contacts">
+      <router-link to="/customers">
         <v-btn color="#6750A4">
           <div>
             <v-icon x-large>mdi-account-group</v-icon>
@@ -48,7 +48,7 @@
       <v-spacer></v-spacer>
     </v-app-bar>
 
-    <v-main style="width: 85%; margin: auto">
+    <v-main :style="!$vuetify.breakpoint.xs ? 'width: 85%; margin: auto' : 'width: 95%; margin: auto' ">
       <router-view/>
     </v-main>
 

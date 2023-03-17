@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div @click="goBack" class="return">
+    <div @click="goBack" class="return mb-6">
       < RETOUR
     </div>
     <ProductCard v-if="Object.keys(deviceComputed).length !== 0" :is-detailed-card="true" :product-name="deviceComputed.name" :picture="deviceComputed.picture"

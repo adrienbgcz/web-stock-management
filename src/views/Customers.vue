@@ -1,0 +1,67 @@
+<template>
+  <div class="home">
+
+    <div v-if='customersList.length !== 0' v-for="customer in customersList" :key="customer.id" class="cardContainer">
+      <router-link :to="`/customer-details/${customer.id}`">
+        <CustomerCard :company-name="customer.company_name" class="mt-10"/>
+      </router-link>
+    </div>
+    <div class="my-2">
+      <PopinForm :input-labels-and-api-name="addCustomerLabelsAndApiName" :element-to-add-in-db="'customer'"
+                 :title="'Ajouter un partenaire'" :icon="'mdi-account-outline'" :confirmation-message="'Le partenaire a bien été ajouté'"/>
+    </div>
+
+  </div>
+</template>
+
+<script>
+
+import CustomerCard from "@/components/CustomerCard"
+import FloatingButton from "@/components/FloatingButton"
+import PopinForm from "@/components/PopinForm";
+
+export default {
+  name: 'Home',
+  components: {
+    PopinForm,
+    FloatingButton,
+    CustomerCard,
+  },
+  data() {
+    return {
+      customers: [],
+      customerName: {
+        label: "Nom du partenaire",
+        apiName: "company_name",
+        type: "lengthLettersNumbers",
+        errorMessage: "Ce champ doit être renseigné et contenir entre 2 et 20 characters et uniquement des chiffres et des lettres."
+      },
+      siret: {
+        label: "SIRET",
+        apiName: "siret",
+        type: "lengthLettersNumbers",
+        errorMessage: "Ce champ doit être renseigné et contenir entre 2 et 20 characters et uniquement des chiffres et des lettres."
+      },
+      phoneNumber: {
+        label: "Numéro de téléphone",
+        apiName: "phone_number",
+        type: "phoneNumber",
+        errorMessage: "Ce champ doit être renseigné et contenir 10 chiffres"
+      },
+    }
+  },
+  computed: {
+    customersList() {
+      return this.customers
+    },
+    addCustomerLabelsAndApiName() {
+      return [this.customerName, this.siret, this.phoneNumber]
+    }
+  },
+  methods: {},
+  async mounted() {
+    const {data} = await this.$store.state.axiosBaseUrl.get("/customers")
+    this.customers = data
+  }
+}
+</script>

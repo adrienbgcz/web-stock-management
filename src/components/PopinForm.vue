@@ -3,24 +3,39 @@
     <v-dialog
         v-model="dialog"
         persistent
-        width="50%"
+        :width="!$vuetify.breakpoint.xs ? '50%' : '80%'"
     >
       <template v-slot:activator="{ props }">
         <FloatingButton v-bind="props" @openForm="dialog=true" :content="'+'"/>
       </template>
       <v-card>
+        <div class="headerIcon pt-6">
+          <v-icon x-large color="#6750A4" >{{ icon }}</v-icon>
+        </div>
+
         <v-card-title>
-          <span class="text-h6 text-center">Ajouter un produit</span>
+          <span class="text-h6 text-center">{{ title }}</span>
         </v-card-title>
 
         <v-card-text>
           <v-container>
+            <div v-if="imageData!=null" class="previewPictureCss">
+              <img v-if="previewPicture" class="preview mb-3" height="268" width="356" :src="previewPicture">
+            </div>
             <v-row v-for="inputLabel in inputLabelsAndApiName" :key="inputLabel.apiName">
               <v-col cols="12">
-                <v-text-field
+                <v-file-input v-if="inputLabel.type === 'picture'"
+                    :rules="rules"
+                    accept="image/png, image/jpeg, image/bmp"
+                    placeholder="Ajouter une image"
+                    prepend-icon="mdi-camera"
+                    label="Ajouter une image"
+                    @change="validInput(inputLabel.type, inputLabelsFormatted[inputLabel.apiName].value, inputLabel.apiName, inputLabel.label); previewAddedPicture($event)"
+                ></v-file-input>
+                <v-text-field v-else
                     :label="inputLabel.label + ' *'"
                     :placeholder="inputLabel.label"
-                    :error="inputLabelsFormatted[inputLabel.apiName] ? !inputLabelsFormatted[inputLabel.apiName].isValidatedData : false"
+                    :error-messages="firstDisplay ? '' : inputLabelsFormatted[inputLabel.apiName] ? !inputLabelsFormatted[inputLabel.apiName].isValidatedData ? inputLabelsFormatted[inputLabel.apiName].errorMessage : '' : ''"
                     outlined
                     required
                     v-model="inputLabelsFormatted[inputLabel.apiName].value"
@@ -28,6 +43,7 @@
                 ></v-text-field>
               </v-col>
             </v-row>
+            <ConfirmationPopin :is-display="displayConfirmationComputed" @close="displayConfirmation=false" :message="confirmationMessage" />
           </v-container>
           <small>* Obligatoire</small>
         </v-card-text>
@@ -37,7 +53,7 @@
               color="white"
               variant="text"
               elevation="0"
-              @click="dialog = false"
+              @click="dialog = false; initializeForm()"
           >
             <span class="popinButtons">Annuler</span>
           </v-btn>
@@ -45,7 +61,8 @@
               color="white"
               variant="text"
               elevation="0"
-              @click="dialog = false"
+              :disabled="manageValidateButton"
+              @click="dialog = false; add()"
           >
             <span class="popinButtons">Valider</span>
           </v-btn>
@@ -57,57 +74,159 @@
 
 <script>
 import FloatingButton from "@/components/FloatingButton";
+import ConfirmationPopin from "@/components/ConfirmationPopin";
+import firebase from "firebase/compat";
 
 export default {
-  components: {FloatingButton},
+  components: {ConfirmationPopin, FloatingButton},
   data: () => ({
     dialog: false,
-    inputLabelsFormatted: {
-
-    },
+    inputLabelsFormatted: {},
     isValidatedDataForm: false,
     isFound: false,
     errors: [],
+    firstDisplay: true,
+    displayConfirmation: false,
+    rules: [
+      value => {
+        return !value || !value.length || value[0].size < 2000000 || 'Avatar size should be less than 2 MB!'
+      },
+    ],
+    imageData : "",
+    firebaseUrl: "",
+    uploadValue: 0,
+    previewPicture: null,
   }),
   props: {
     inputLabelsAndApiName: {
       type: Array,
       required: true
+    },
+    elementToAddInDb: {
+      type: String,
+      required: true
+    },
+    title: {
+      type: String
+    },
+    icon: {
+      type: String
+    },
+    confirmationMessage: {
+      type: String,
+      required: true
+    }
+
+  },
+  computed: {
+    manageValidateButton() {
+      return Object.values(this.inputLabelsFormatted).find(value => value.isValidatedData === false) ? true : false
+    },
+    displayConfirmationComputed() {
+      return this.displayConfirmation
     }
   },
   methods: {
     validInput(type, value, apiName, label) {
-      console.log(this.inputLabelsFormatted)
-
       let regex = ""
       this.isFound = false
 
       switch(type) {
-        case "string" :
-          regex=/^[a-zA-Zéèàêïî]{2,20}$/
-          this.setValidatedData(value, regex, apiName)
+        case "lengthLettersNumbers" :
+          regex=/^[a-zA-Z0-9éèàêïî]{2,20}$/
+          this.setValidatedData(value, regex, apiName, label, type)
           break;
         case "number" :
           regex=/^[0-9]{1,4}$/
-          this.setValidatedData(value, regex, apiName)
+          this.setValidatedData(value, regex, apiName, label, type)
           break;
+        case "picture" :
+          this.inputLabelsFormatted[apiName].isValidatedData = true
+          break;
+        case "phoneNumber" :
+          regex=/^[0-9]{10}$/
+          this.setValidatedData(value, regex, apiName, label, type)
       }
     },
-    setValidatedData(value, regex, apiName) {
+    setValidatedData(value, regex, apiName, label) {
+      this.firstDisplay = false
       this.isFound = Boolean(value.match(regex))
-      if(this.isFound) {
+      if (this.isFound) {
         this.inputLabelsFormatted[apiName].isValidatedData = true
+        const elementToDelete = this.errors.find(element => element.label === label)
+        this.errors.splice(elementToDelete, 1)
       } else {
         this.inputLabelsFormatted[apiName].isValidatedData = false
       }
     },
+    initializeForm() {
+      this.inputLabelsAndApiName.forEach((element) => {
+        this.$set(this.inputLabelsFormatted, element.apiName, {value: "", isValidatedData: false, errorMessage: element.errorMessage})
+      })
+      this.firstDisplay = true
+      this.errors = []
+    },
+    async add() {
+      try {
+      if(this.elementToAddInDb === 'product') {
+          if(this.inputLabelsFormatted.picture) await this.uploadPicture()
+          const name = this.inputLabelsFormatted.name.value
+          const price = this.inputLabelsFormatted.price.value
+          const stock_quantity = this.inputLabelsFormatted.stock_quantity.value
+          const serial_number = this.inputLabelsFormatted.serial_number.value
+          const picture = this.firebaseUrl
+
+          const product = {name, price, serial_number, stock_quantity, picture}
+
+          await this.$store.state.axiosBaseUrl.post('/devices', product, {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          })
+          this.displayConfirmation=true
+        }
+      else if (this.elementToAddInDb === 'customer') {
+        const company_name = this.inputLabelsFormatted.company_name.value
+        const siret = this.inputLabelsFormatted.siret.value
+        const phone_number = this.inputLabelsFormatted.phone_number.value
+
+        const customer = {company_name, siret, phone_number}
+
+        await this.$store.state.axiosBaseUrl.post('/customers', customer, {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+        this.displayConfirmation=true
+      }
+
+      } catch(e) {
+        console.error(e)
+      }
+    },
+    previewAddedPicture(picture) {
+      this.imageData = picture
+      const reader = new FileReader()
+      reader.addEventListener('load', e => this.previewPicture = e.target.result)
+      if(picture) reader.readAsDataURL(picture)
+    },
+     async uploadPicture(){
+      this.firebaseUrl = null
+      const storageRef=firebase.storage().ref(`devices/images/${this.imageData.name}`).put(this.imageData)
+
+       //TODO : loader with this code
+      storageRef.on(`state_changed`,snapshot=>{
+            this.uploadValue = (snapshot.bytesTransferred/snapshot.totalBytes)*100
+          }, error=>{console.log(error.message)})
+      this.uploadValue = 100
+
+      this.firebaseUrl = await storageRef.snapshot.ref.getDownloadURL()
+    },
   },
   beforeMount() {
-    console.log("INPUT LABEL AND API NAME", this.inputLabelsFormatted)
-    this.inputLabelsAndApiName.forEach((element) => {
-      this.$set(this.inputLabelsFormatted, element.apiName, {value: "",isValidatedData: false})
-    })
-  }
+    this.initializeForm()
+  },
+
 }
 </script>
 
@@ -119,6 +238,16 @@ export default {
 .v-card__title {
   justify-content: center;
   font-weight: bold;
-
 }
+
+.headerIcon {
+  display: flex;
+  justify-content: center;
+}
+
+.previewPictureCss {
+  display: flex;
+  justify-content: center;
+}
+
 </style>

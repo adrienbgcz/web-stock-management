@@ -1,21 +1,21 @@
 <template>
   <v-card v-if="!isDetailedCard"
       class="mx-auto"
-      max-width="70%"
+      :max-width="!$vuetify.breakpoint.xs ? '70%' : '85%'"
       outlined
   >
     <v-list-item three-line>
 
-      <v-icon x-large color="#6750A4" class="ml-10 mr-10">mdi-devices</v-icon>
+      <v-icon v-if="!$vuetify.breakpoint.xs" x-large color="#6750A4" class="ml-10 mr-10">mdi-devices</v-icon>
       <v-list-item-content class="justifyLeft">
-        <v-list-item-title class="text-h5 mb-1">
+        <v-list-item-title :class="!$vuetify.breakpoint.xs ? 'text-h5' : 'text-h7'" class="mb1">
           {{ productName }} - {{ price }} €
         </v-list-item-title>
         <span class="stockFormat">Stock : {{ stock }}</span>
       </v-list-item-content>
 
 
-      <v-img :src="picture" max-width="100px" class="mt-1 mb-1 mr-10"/>
+      <v-img :src="picture" :max-width="!$vuetify.breakpoint.xs ? '100px' : '50px'" :class="!$vuetify.breakpoint.xs ? 'mt-1 mb-1 mr-10' : 'mt-1 mb-1 mr-1' "/>
     </v-list-item>
 
   </v-card>

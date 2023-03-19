@@ -1,7 +1,17 @@
 <template>
   <div class="home">
+    <div :style="!$vuetify.breakpoint.xs ? 'width:70%; margin:auto' : 'width:85%; margin:auto'">
+      <v-text-field
+          outlined
+          label="Rechercher"
+          prepend-inner-icon="mdi-magnify"
+          v-model="searchedTerm"
+          @input="search"
+      ></v-text-field>
+    </div>
 
-    <div v-if='customersList.length !== 0' v-for="customer in customersList" :key="customer.id" class="cardContainer">
+
+    <div v-if='customersList.length !== 0' v-for="customer in filteredCustomersList" :key="customer.id" >
       <router-link :to="`/customer-details/${customer.id}`">
         <CustomerCard :company-name="customer.company_name" class="mt-10"/>
       </router-link>
@@ -30,6 +40,8 @@ export default {
   data() {
     return {
       customers: [],
+      filteredCustomers: [],
+      searchedTerm: "",
       customerName: {
         label: "Nom du partenaire",
         apiName: "company_name",
@@ -56,12 +68,28 @@ export default {
     },
     addCustomerLabelsAndApiName() {
       return [this.customerName, this.siret, this.phoneNumber]
+    },
+    filteredCustomersList() {
+      return this.filteredCustomers
     }
   },
-  methods: {},
+  methods: {
+    search() {
+      this.filteredCustomers = this.customersList.filter(customer => customer.company_name.toLowerCase().includes(this.searchedTerm.toLowerCase()))
+    }
+  },
   async mounted() {
     const {data} = await this.$store.state.axiosBaseUrl.get("/customers")
     this.customers = data
+    this.filteredCustomers = this.customers
   }
 }
 </script>
+
+<style >
+.v-text-field fieldset, .v-text-field .v-input__control, .v-text-field .v-input__slot {
+  color: #6750A4!important;
+  border-width: medium;
+}
+
+</style>

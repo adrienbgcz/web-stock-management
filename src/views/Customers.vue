@@ -79,8 +79,13 @@ export default {
     }
   },
   async mounted() {
-    const {data} = await this.$store.state.axiosBaseUrl.get("/customers")
-    this.customers = data
+    if(this.$store.state.customers.length > 0) {
+      this.customers = this.$store.state.customers
+    } else {
+        const {data} = await this.$store.state.axiosBaseUrl.get("/customers")
+        this.customers = data
+        this.$store.commit('setCustomers', data)
+    }
     this.filteredCustomers = this.customers
   }
 }

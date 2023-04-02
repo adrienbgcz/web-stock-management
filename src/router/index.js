@@ -38,7 +38,13 @@ const routes = [
       return import('../views/CustomerDetails.vue')
     }
   },
-
+  {
+    path: '/customer-details/:customerId/bill-details/:billId',
+    name: 'BillPdf',
+    component: function () {
+      return import('../components/BillPdf.vue')
+    }
+  }
 ]
 
 const router = new VueRouter({

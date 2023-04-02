@@ -65,9 +65,21 @@ export default {
   },
   methods: {},
   async mounted() {
-    const {data} = await this.$store.state.axiosBaseUrl.get("/devices")
-    this.products = data
+    if(this.$store.state.products.length > 0) {
+      console.log('ici')
+      this.products = this.$store.state.products
+    } else {
+      const {data} = await this.$store.state.axiosBaseUrl.get("/devices")
+      this.products = data
+      this.$store.commit('setProducts', data)
+    }
+    console.log(this.$store.state.products)
 
+
+
+    /*const {data} = await this.$store.state.axiosBaseUrl.get("/devices")
+    this.products = data
+    this.$store.commit('setProducts', data)*/
   }
 }
 </script>

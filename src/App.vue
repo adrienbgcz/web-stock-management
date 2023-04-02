@@ -40,7 +40,7 @@
         <v-btn color="#6750A4">
           <div>
             <v-icon x-large>mdi-file-document-plus</v-icon>
-            <div class="mt-1">Achats - Ventes</div>
+            <div class="mt-1">Editer une facture</div>
           </div>
         </v-btn>
       </router-link>

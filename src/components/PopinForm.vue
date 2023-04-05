@@ -95,7 +95,7 @@ export default {
     imageData : "",
     firebaseUrl: "",
     uploadValue: 0,
-    previewPicture: null,
+    previewPicture: null
   }),
   props: {
     inputLabelsAndApiName: {

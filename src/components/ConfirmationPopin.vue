@@ -7,7 +7,7 @@
       >
         <v-card>
           <v-card-text class="pa-6">
-            Votre produit a bien été ajouté.
+            {{ message }}
           </v-card-text>
           <v-card-actions>
             <v-btn color="#6750A4" @click="$emit('close')" class="mb-4"><span style="color: white">OK</span></v-btn>

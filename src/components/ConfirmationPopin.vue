@@ -30,8 +30,7 @@ export default {
       type: Boolean
     },
     message: {
-      type: String,
-      required: true
+      type: String
     }
   },
   computed: {

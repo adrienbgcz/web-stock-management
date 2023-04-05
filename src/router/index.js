@@ -1,14 +1,29 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import Products from '../views/Products.vue'
+import Connection from "@/views/Connection";
+
 
 Vue.use(VueRouter)
 
 const routes = [
   {
     path: '/',
+    name: 'Connection',
+    component: Connection
+  },
+  {
+    path: '/registration',
+    name: 'Registration ',
+    component: function () {
+      return import('../views/Registration.vue')
+    }
+  },
+  {
+    path: '/products',
     name: 'Products',
-    component: Products
+    component: function () {
+      return import('../views/Products.vue')
+    }
   },
   {
     path: '/customers',

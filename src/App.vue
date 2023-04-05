@@ -12,7 +12,16 @@
 
       <v-spacer></v-spacer>
 
-      <router-link to="/">
+<!--      <router-link to="/products">
+        <v-btn color="#6750A4">
+          <div>
+            <v-icon x-large>mdi-devices</v-icon>
+            <div class="mt-1">Produits</div>
+          </div>
+        </v-btn>
+      </router-link>-->
+
+      <router-link to="/products">
         <v-btn color="#6750A4">
           <div>
             <v-icon x-large>mdi-devices</v-icon>

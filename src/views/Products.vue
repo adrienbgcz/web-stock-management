@@ -20,7 +20,7 @@ import ProductCard from "@/components/ProductCard"
 import PopinForm from "@/components/PopinForm";
 
 export default {
-  name: 'Home',
+  name: 'Products',
   components: {
     PopinForm,
     ProductCard

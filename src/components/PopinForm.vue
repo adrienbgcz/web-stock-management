@@ -5,12 +5,12 @@
         persistent
         :width="!$vuetify.breakpoint.xs ? '50%' : '80%'"
     >
-      <template v-slot:activator="{ props }">
+      <template v-slot:activator="{ props }" v-if="!isRegistration">
         <FloatingButton v-bind="props" @openForm="dialog=true" :content="'+'"/>
       </template>
       <v-card>
         <div class="headerIcon pt-6">
-          <v-icon x-large color="#6750A4" >{{ icon }}</v-icon>
+          <v-icon x-large color="#6750A4">{{ icon }}</v-icon>
         </div>
 
         <v-card-title>
@@ -25,31 +25,33 @@
             <v-row v-for="inputLabel in inputLabelsAndApiName" :key="inputLabel.apiName">
               <v-col cols="12">
                 <v-file-input v-if="inputLabel.type === 'picture'"
-                    :rules="rules"
-                    accept="image/png, image/jpeg, image/bmp"
-                    placeholder="Ajouter une image"
-                    prepend-icon="mdi-camera"
-                    label="Ajouter une image"
-                    @change="validInput(inputLabel.type, inputLabelsFormatted[inputLabel.apiName].value, inputLabel.apiName, inputLabel.label); previewAddedPicture($event)"
+                              :rules="rules"
+                              accept="image/png, image/jpeg, image/bmp"
+                              placeholder="Ajouter une image"
+                              prepend-icon="mdi-camera"
+                              label="Ajouter une image"
+                              @change="validInput(inputLabel.type, inputLabelsFormatted[inputLabel.apiName].value, inputLabel.apiName, inputLabel.label); previewAddedPicture($event)"
                 ></v-file-input>
                 <v-text-field v-else
-                    :label="inputLabel.label + ' *'"
-                    :placeholder="inputLabel.label"
-                    :error-messages="firstDisplay ? '' : inputLabelsFormatted[inputLabel.apiName] ? !inputLabelsFormatted[inputLabel.apiName].isValidatedData ? inputLabelsFormatted[inputLabel.apiName].errorMessage : '' : ''"
-                    outlined
-                    required
-                    v-model="inputLabelsFormatted[inputLabel.apiName].value"
-                    @input="validInput(inputLabel.type, inputLabelsFormatted[inputLabel.apiName].value, inputLabel.apiName, inputLabel.label)"
+                              :label="inputLabel.label + ' *'"
+                              :placeholder="inputLabel.label"
+                              :error-messages="firstDisplay ? '' : inputLabelsFormatted[inputLabel.apiName] ? !inputLabelsFormatted[inputLabel.apiName].isValidatedData ? inputLabelsFormatted[inputLabel.apiName].errorMessage : '' : ''"
+                              outlined
+                              required
+                              v-model="inputLabelsFormatted[inputLabel.apiName].value"
+                              @input="validInput(inputLabel.type, inputLabelsFormatted[inputLabel.apiName].value, inputLabel.apiName, inputLabel.label)"
                 ></v-text-field>
               </v-col>
             </v-row>
-            <ConfirmationPopin :is-display="displayConfirmationComputed" @close="displayConfirmation=false" :message="confirmationMessage" />
+            <ConfirmationPopin :is-display="displayConfirmationComputed"
+                               @close="displayConfirmation=false" :message="confirmationMessage"/>
           </v-container>
           <small>* Obligatoire</small>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
+              v-if="!isRegistration"
               color="white"
               variant="text"
               elevation="0"
@@ -57,6 +59,11 @@
           >
             <span class="popinButtons">Annuler</span>
           </v-btn>
+
+          <router-link to="/">
+            <span class="popinButtons mr-4" v-if="isRegistration">Déjà inscrit ? Me connecter</span>
+          </router-link>
+
           <v-btn
               color="white"
               variant="text"
@@ -92,10 +99,11 @@ export default {
         return !value || !value.length || value[0].size < 2000000 || 'Avatar size should be less than 2 MB!'
       },
     ],
-    imageData : "",
+    imageData: "",
     firebaseUrl: "",
     uploadValue: 0,
-    previewPicture: null
+    previewPicture: null,
+    samePasswords: false
   }),
   props: {
     inputLabelsAndApiName: {
@@ -114,7 +122,14 @@ export default {
     },
     confirmationMessage: {
       type: String,
-      required: true
+    },
+    isRegistration: {
+      type: Boolean,
+      default: false
+    },
+    isInscription: {
+      type: Boolean,
+      default: false
     }
 
   },
@@ -131,45 +146,72 @@ export default {
       let regex = ""
       this.isFound = false
 
-      switch(type) {
+      switch (type) {
         case "lengthLettersNumbers" :
-          regex=/^[a-zA-Z0-9éèàêïî]{2,20}$/
+          regex = /^[a-zA-Z0-9éèàêïî]{2,20}$/
           this.setValidatedData(value, regex, apiName, label, type)
           break;
         case "number" :
-          regex=/^[0-9]{1,4}$/
+          regex = /^[0-9]{1,4}$/
           this.setValidatedData(value, regex, apiName, label, type)
           break;
         case "picture" :
           this.inputLabelsFormatted[apiName].isValidatedData = true
           break;
         case "phoneNumber" :
-          regex=/^[0-9]{10}$/
+          regex = /^[0-9]{10}$/
           this.setValidatedData(value, regex, apiName, label, type)
+        case "email" :
+          regex = /^[a-z0-9._\-]{2,30}@[a-z0-9]{2,30}\.[a-z]{2,4}$/
+          this.setValidatedData(value, regex, apiName, label, type)
+          break;
+        case "password" :
+          this.samePasswords = false
+          if (this.inputLabelsFormatted[apiName].value === this.inputLabelsFormatted["passwordConfirmation"].value) this.samePasswords = true
+          console.log(this.samePasswords)
+          regex = /^((?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%?=*&]).{8,20})$/
+          this.setValidatedData(value, regex, apiName, label, type, this.samePasswords)
+          break;
+        case "passwordConfirmation" :
+          this.samePasswords = false
+          console.log(this.inputLabelsFormatted[apiName].value)
+          if (this.inputLabelsFormatted[apiName].value === this.inputLabelsFormatted["password"].value && this.inputLabelsFormatted[apiName].value.length !== 0 && this.inputLabelsFormatted["password"].value.length !== 0) this.samePasswords = true
+          console.log(this.samePasswords)
+          this.setValidatedData(value, regex, apiName, label, type, this.samePasswords)
+          break;
       }
     },
-    setValidatedData(value, regex, apiName, label) {
+    setValidatedData(value, regex, apiName, label, type, samePasswords) {
       this.firstDisplay = false
-      this.isFound = Boolean(value.match(regex))
+      if (type !== "passwordConfirmation") this.isFound = Boolean(value.match(regex))
+
       if (this.isFound) {
-        this.inputLabelsFormatted[apiName].isValidatedData = true
-        const elementToDelete = this.errors.find(element => element.label === label)
-        this.errors.splice(elementToDelete, 1)
+        this.inputLabelsFormatted[apiName].isValidatedData = true;
+        if (type === "password" && !samePasswords) this.inputLabelsFormatted["passwordConfirmation"].isValidatedData = false
+        else if (type === "password" && samePasswords) this.inputLabelsFormatted["passwordConfirmation"].isValidatedData = true
+      } else if (samePasswords) {
+        this.inputLabelsFormatted["passwordConfirmation"].isValidatedData = true
+      } else if (type === "password") {
+        this.inputLabelsFormatted["passwordConfirmation"].isValidatedData = false
+        this.inputLabelsFormatted[apiName].isValidatedData = false
       } else {
         this.inputLabelsFormatted[apiName].isValidatedData = false
       }
     },
     initializeForm() {
       this.inputLabelsAndApiName.forEach((element) => {
-        this.$set(this.inputLabelsFormatted, element.apiName, {value: "", isValidatedData: false, errorMessage: element.errorMessage})
+        this.$set(this.inputLabelsFormatted, element.apiName, {
+          value: "",
+          isValidatedData: false,
+          errorMessage: element.errorMessage
+        })
       })
       this.firstDisplay = true
-      this.errors = []
     },
     async add() {
       try {
-      if(this.elementToAddInDb === 'product') {
-          if(this.inputLabelsFormatted.picture) await this.uploadPicture()
+        if (this.elementToAddInDb === 'product') {
+          if (this.inputLabelsFormatted.picture) await this.uploadPicture()
           const name = this.inputLabelsFormatted.name.value
           const price = this.inputLabelsFormatted.price.value
           const stock_quantity = this.inputLabelsFormatted.stock_quantity.value
@@ -183,24 +225,33 @@ export default {
               'Content-Type': 'application/json'
             }
           })
-          this.displayConfirmation=true
+        } else if (this.elementToAddInDb === 'customer') {
+          const company_name = this.inputLabelsFormatted.company_name.value
+          const siret = this.inputLabelsFormatted.siret.value
+          const phone_number = this.inputLabelsFormatted.phone_number.value
+
+          const customer = {company_name, siret, phone_number}
+
+          await this.$store.state.axiosBaseUrl.post('/customers', customer, {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          })
+        } else if (this.elementToAddInDb === 'user') {
+          const email = this.inputLabelsFormatted.email.value
+          const password = this.inputLabelsFormatted.password.value
+
+          const user = {email, password}
+
+          await this.$store.state.axiosBaseUrl.post('/users', user, {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          })
         }
-      else if (this.elementToAddInDb === 'customer') {
-        const company_name = this.inputLabelsFormatted.company_name.value
-        const siret = this.inputLabelsFormatted.siret.value
-        const phone_number = this.inputLabelsFormatted.phone_number.value
+        this.displayConfirmation = true
 
-        const customer = {company_name, siret, phone_number}
-
-        await this.$store.state.axiosBaseUrl.post('/customers', customer, {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        })
-        this.displayConfirmation=true
-      }
-
-      } catch(e) {
+      } catch (e) {
         console.error(e)
       }
     },
@@ -208,16 +259,18 @@ export default {
       this.imageData = picture
       const reader = new FileReader()
       reader.addEventListener('load', e => this.previewPicture = e.target.result)
-      if(picture) reader.readAsDataURL(picture)
+      if (picture) reader.readAsDataURL(picture)
     },
-     async uploadPicture(){
+    async uploadPicture() {
       this.firebaseUrl = null
-      const storageRef=firebase.storage().ref(`devices/images/${this.imageData.name}`).put(this.imageData)
+      const storageRef = firebase.storage().ref(`devices/images/${this.imageData.name}`).put(this.imageData)
 
-       //TODO : loader with this code
-      storageRef.on(`state_changed`,snapshot=>{
-            this.uploadValue = (snapshot.bytesTransferred/snapshot.totalBytes)*100
-          }, error=>{console.log(error.message)})
+      //TODO : loader with this code
+      storageRef.on(`state_changed`, snapshot => {
+        this.uploadValue = (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+      }, error => {
+        console.log(error.message)
+      })
       this.uploadValue = 100
 
       this.firebaseUrl = await storageRef.snapshot.ref.getDownloadURL()
@@ -225,6 +278,7 @@ export default {
   },
   beforeMount() {
     this.initializeForm()
+    if (this.isRegistration) this.dialog = true;
   },
 
 }

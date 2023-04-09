@@ -8,7 +8,9 @@
         height="auto"
     >
 
-      <v-toolbar-title>Stock Management</v-toolbar-title>
+      <v-toolbar-title v-if="userConnected.pseudo">Bonjour {{ userConnected.pseudo }} ! </v-toolbar-title>
+      <v-toolbar-title v-else>Stock Management</v-toolbar-title>
+
 
       <v-spacer></v-spacer>
 
@@ -68,11 +70,40 @@
 
 <script>
 
+import Constants from "@/constants";
+
 export default {
   name: "App",
 
-  data: () => ({
-  }),
+  data() {
+    return {
+      user: {}
+    }
+  },
+  computed: {
+    userConnected() {
+      return this.user
+    }
+  },
+  async mounted() {
+    if (localStorage.userId) {
+      try {
+        const data = await this.$store.state.axiosBaseUrl.get(`/users/${localStorage.userId}`, {
+          headers: Constants.HEADERS
+        })
+        this.user = data.data
+
+      } catch(e) {
+        console.error(e)
+        if(e.response.status === 401) {
+          localStorage.removeItem('userPseudo')
+          localStorage.removeItem('userId')
+          localStorage.removeItem('token')
+          await this.$router.replace({path: '/'})
+        }
+      }
+    }
+  }
 };
 </script>
 <style scoped>

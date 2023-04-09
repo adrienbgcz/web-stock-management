@@ -20,6 +20,7 @@
 <script>
 import CustomerCard from "@/components/CustomerCard";
 import BillNumberAndDateCard from "@/components/CustomerDetailsOrderCard";
+import Constants from "@/constants";
 
 export default {
   name: "CustomerDetails",
@@ -36,11 +37,24 @@ export default {
     }
   },
   async mounted() {
-    const data1 = await this.$store.state.axiosBaseUrl.get(`customers/${this.$route?.params.id}`)
-    this.customer = data1.data[0]
+    let data1;
+    let data2;
 
-    const data2 = await this.$store.state.axiosBaseUrl.get(`customers/${this.$route?.params.id}/bills`)
-    this.bills = data2.data
+    try {
+        data1 = await this.$store.state.axiosBaseUrl.get(`customers/${this.$route?.params.id}`, {
+        headers: Constants.HEADERS
+      })
+      this.customer = data1.data[0]
+
+        data2 = await this.$store.state.axiosBaseUrl.get(`customers/${this.$route?.params.id}/bills`, {
+        headers: Constants.HEADERS
+      })
+      this.bills = data2.data
+    } catch(e) {
+      console.error(e)
+      if(e.response.status === 401) await this.$router.replace({path: '/'})
+    }
+
   }
 }
 </script>

@@ -38,6 +38,7 @@
 
 <script>
 import VueHtml2pdf from 'vue-html2pdf'
+import Constants from "@/constants";
 
 export default {
   name: "BillPdf",
@@ -65,15 +66,26 @@ export default {
     VueHtml2pdf,
   },
   async mounted() {
-    const data1 = await this.$store.state.axiosBaseUrl.get(`customers/${this.$route?.params.customerId}`)
-    this.company = data1.data[0].company_name
-    this.siret = data1.data[0].siret
-    this.phoneNumber = data1.data[0].phone_number
-    console.log(data1)
-    const data2 = await this.$store.state.axiosBaseUrl.get(`/customers/${this.$route?.params.customerId}/bills/${this.$route?.params.billId}/transactions`)
-    this.allTransactionByCustomersAndBillId = data2.data
-    console.log(this.allTransactionByCustomersAndBillId)
-    this.generateReport()
+    let data1;
+    let data2;
+    try {
+      data1 = await this.$store.state.axiosBaseUrl.get(`customers/${this.$route?.params.customerId}`, {
+        headers: Constants.HEADERS
+      })
+      this.company = data1.data[0].company_name
+      this.siret = data1.data[0].siret
+      this.phoneNumber = data1.data[0].phone_number
+      data2 = await this.$store.state.axiosBaseUrl.get(`/customers/${this.$route?.params.customerId}/bills/${this.$route?.params.billId}/transactions`, {
+        headers: Constants.HEADERS
+      })
+      this.allTransactionByCustomersAndBillId = data2.data
+      console.log(this.allTransactionByCustomersAndBillId)
+      this.generateReport()
+    } catch (e) {
+      console.error(e)
+      if (e.response.status === 401) await this.$router.replace({path: '/'})
+    }
+
   },
   methods: {
     generateReport() {

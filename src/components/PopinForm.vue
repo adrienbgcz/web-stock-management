@@ -1,11 +1,11 @@
 <template>
   <v-row justify="center">
-    <v-dialog
+    <v-dialog v-if="!isLoginComputed"
         v-model="dialog"
         persistent
         :width="!$vuetify.breakpoint.xs ? '50%' : '80%'"
     >
-      <template v-slot:activator="{ props }" v-if="!isRegistration">
+      <template v-slot:activator="{ props }" v-if="!isRegistration && !isConnection">
         <FloatingButton v-bind="props" @openForm="dialog=true" :content="'+'"/>
       </template>
       <v-card>
@@ -17,7 +17,16 @@
           <span class="text-h6 text-center">{{ title }}</span>
         </v-card-title>
 
-        <v-card-text>
+        <v-card-text v-if="displayConnectionErrorMessageComputed">
+          <v-container>
+            <v-row>
+              <v-col class="text-center">
+                Identifiants incorrects !
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-card-text>
+        <v-card-text v-else>
           <v-container>
             <div v-if="imageData!=null" class="previewPictureCss">
               <img v-if="previewPicture" class="preview mb-3" height="268" width="356" :src="previewPicture">
@@ -51,7 +60,7 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
-              v-if="!isRegistration"
+              v-if="!isRegistration && !isConnection"
               color="white"
               variant="text"
               elevation="0"
@@ -64,18 +73,30 @@
             <span class="popinButtons mr-4" v-if="isRegistration">Déjà inscrit ? Me connecter</span>
           </router-link>
 
+          <router-link to="/registration">
+            <span class="popinButtons mr-4" v-if="isConnection">Pas encore inscrit ? S'inscrire</span>
+          </router-link>
+
           <v-btn
+              v-if="!displayConnectionErrorMessageComputed"
               color="white"
               variant="text"
               elevation="0"
               :disabled="manageValidateButton"
-              @click="dialog = false; add()"
+              @click="add()"
           >
             <span class="popinButtons">Valider</span>
           </v-btn>
+          <span v-else class="popinButtons" @click="displayConnectionErrorMessage = false">Réessayer</span>
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <v-progress-circular
+        v-else
+        :size="50"
+        color="#6750A4"
+        indeterminate
+    ></v-progress-circular>
   </v-row>
 </template>
 
@@ -83,6 +104,7 @@
 import FloatingButton from "@/components/FloatingButton";
 import ConfirmationPopin from "@/components/ConfirmationPopin";
 import firebase from "firebase/compat";
+import Constants from "@/constants";
 
 export default {
   components: {ConfirmationPopin, FloatingButton},
@@ -103,7 +125,8 @@ export default {
     firebaseUrl: "",
     uploadValue: 0,
     previewPicture: null,
-    samePasswords: false
+    samePasswords: false,
+    displayConnectionErrorMessage: false
   }),
   props: {
     inputLabelsAndApiName: {
@@ -127,7 +150,7 @@ export default {
       type: Boolean,
       default: false
     },
-    isInscription: {
+    isConnection: {
       type: Boolean,
       default: false
     }
@@ -139,6 +162,12 @@ export default {
     },
     displayConfirmationComputed() {
       return this.displayConfirmation
+    },
+    displayConnectionErrorMessageComputed() {
+      return this.displayConnectionErrorMessage
+    },
+    isLoginComputed() {
+      return this.isLoading
     }
   },
   methods: {
@@ -161,14 +190,14 @@ export default {
         case "phoneNumber" :
           regex = /^[0-9]{10}$/
           this.setValidatedData(value, regex, apiName, label, type)
+          break;
         case "email" :
           regex = /^[a-z0-9._\-]{2,30}@[a-z0-9]{2,30}\.[a-z]{2,4}$/
           this.setValidatedData(value, regex, apiName, label, type)
           break;
         case "password" :
           this.samePasswords = false
-          if (this.inputLabelsFormatted[apiName].value === this.inputLabelsFormatted["passwordConfirmation"].value) this.samePasswords = true
-          console.log(this.samePasswords)
+          if (this.inputLabelsFormatted[apiName].value === this.inputLabelsFormatted["passwordConfirmation"]?.value) this.samePasswords = true
           regex = /^((?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%?=*&]).{8,20})$/
           this.setValidatedData(value, regex, apiName, label, type, this.samePasswords)
           break;
@@ -187,12 +216,12 @@ export default {
 
       if (this.isFound) {
         this.inputLabelsFormatted[apiName].isValidatedData = true;
-        if (type === "password" && !samePasswords) this.inputLabelsFormatted["passwordConfirmation"].isValidatedData = false
+        if (type === "password" && !samePasswords && this.isRegistration) this.inputLabelsFormatted["passwordConfirmation"].isValidatedData = false
         else if (type === "password" && samePasswords) this.inputLabelsFormatted["passwordConfirmation"].isValidatedData = true
       } else if (samePasswords) {
         this.inputLabelsFormatted["passwordConfirmation"].isValidatedData = true
       } else if (type === "password") {
-        this.inputLabelsFormatted["passwordConfirmation"].isValidatedData = false
+        if (this.inputLabelsFormatted["passwordConfirmation"]?.isValidatedData) this.inputLabelsFormatted["passwordConfirmation"].isValidatedData = false
         this.inputLabelsFormatted[apiName].isValidatedData = false
       } else {
         this.inputLabelsFormatted[apiName].isValidatedData = false
@@ -220,11 +249,16 @@ export default {
 
           const product = {name, price, serial_number, stock_quantity, picture}
 
-          await this.$store.state.axiosBaseUrl.post('/devices', product, {
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          })
+          let response;
+          try {
+            response = await this.$store.state.axiosBaseUrl.post('/devices', product, {
+              headers: Constants.HEADERS
+            })
+          } catch(e) {
+            console.error(e)
+            if(e.response.status === 401) await this.$router.replace({path: '/'})
+          }
+
         } else if (this.elementToAddInDb === 'customer') {
           const company_name = this.inputLabelsFormatted.company_name.value
           const siret = this.inputLabelsFormatted.siret.value
@@ -232,27 +266,53 @@ export default {
 
           const customer = {company_name, siret, phone_number}
 
-          await this.$store.state.axiosBaseUrl.post('/customers', customer, {
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          })
-        } else if (this.elementToAddInDb === 'user') {
+          let response;
+          try {
+            response = await this.$store.state.axiosBaseUrl.post('/customers', customer, {
+              headers: Constants.HEADERS
+            })
+          } catch(e) {
+            console.error(e)
+            if(e.response.status === 401) await this.$router.replace({path: '/'})
+          }
+
+        } else if (this.elementToAddInDb === 'user' || this.elementToAddInDb === 'userConnection' ) {
+          this.isLoading = true
           const email = this.inputLabelsFormatted.email.value
           const password = this.inputLabelsFormatted.password.value
+          const pseudo = this.inputLabelsFormatted.pseudo?.value
 
-          const user = {email, password}
+          const user = this.elementToAddInDb === 'user' ? {email, password, pseudo} : {email, password}
 
-          await this.$store.state.axiosBaseUrl.post('/users', user, {
-            headers: {
-              'Content-Type': 'application/json'
+          const url = this.elementToAddInDb === 'user' ? '/users' : '/login'
+
+          let response;
+          try {
+            response = await this.$store.state.axiosBaseUrl.post(url, user, {
+              headers: Constants.HEADERS
+            })
+            this.$store.commit('setWelcomeMessage', true)
+            localStorage.setItem('token', response.data.token)
+            localStorage.setItem('userPseudo', response.data.user.pseudo)
+            localStorage.setItem('userId', response.data.user.userId.toString())
+            if(response.data.user) setTimeout(() =>  this.$router.replace({path: '/products'}), 2000)
+          } catch(e) {
+            console.error(e)
+            if(e.response.status === 401) {
+              this.displayConnectionErrorMessage = true
             }
-          })
+          }
+          this.isLoading = false
         }
-        this.displayConfirmation = true
 
+        if(this.elementToAddInDb !== 'userConnection') {
+          this.displayConfirmation = true
+          this.dialog = false
+        }
+        console.log(this.dialog)
       } catch (e) {
         console.error(e)
+        /*this.displayErrorMessage = true*/
       }
     },
     previewAddedPicture(picture) {
@@ -274,11 +334,11 @@ export default {
       this.uploadValue = 100
 
       this.firebaseUrl = await storageRef.snapshot.ref.getDownloadURL()
-    },
+    }
   },
   beforeMount() {
     this.initializeForm()
-    if (this.isRegistration) this.dialog = true;
+    if (this.isRegistration || this.isConnection) this.dialog = true;
   },
 
 }
@@ -287,6 +347,10 @@ export default {
 <style scoped>
 .popinButtons {
   color: #6750A4;
+}
+
+.popinButtons:hover {
+  cursor: pointer;
 }
 
 .v-card__title {

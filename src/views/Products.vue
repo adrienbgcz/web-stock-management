@@ -18,6 +18,7 @@
 <script>
 import ProductCard from "@/components/ProductCard"
 import PopinForm from "@/components/PopinForm";
+import Constants from "@/constants";
 
 export default {
   name: 'Products',
@@ -66,20 +67,22 @@ export default {
   methods: {},
   async mounted() {
     if(this.$store.state.products.length > 0) {
-      console.log('ici')
       this.products = this.$store.state.products
     } else {
-      const {data} = await this.$store.state.axiosBaseUrl.get("/devices")
-      this.products = data
+      let data;
+      try {
+          data = await this.$store.state.axiosBaseUrl.get("/devices", {
+          headers: Constants.HEADERS
+        })
+      } catch(e) {
+        console.error(e)
+        if(e.response.status === 401) await this.$router.replace({path: '/'})
+      }
+
+      this.products = data.data
       this.$store.commit('setProducts', data)
     }
-    console.log(this.$store.state.products)
 
-
-
-    /*const {data} = await this.$store.state.axiosBaseUrl.get("/devices")
-    this.products = data
-    this.$store.commit('setProducts', data)*/
   }
 }
 </script>

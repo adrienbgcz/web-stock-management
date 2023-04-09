@@ -29,6 +29,7 @@
 import CustomerCard from "@/components/CustomerCard"
 import FloatingButton from "@/components/FloatingButton"
 import PopinForm from "@/components/PopinForm";
+import Constants from "@/constants";
 
 export default {
   name: 'Home',
@@ -82,9 +83,18 @@ export default {
     if(this.$store.state.customers.length > 0) {
       this.customers = this.$store.state.customers
     } else {
-        const {data} = await this.$store.state.axiosBaseUrl.get("/customers")
-        this.customers = data
-        this.$store.commit('setCustomers', data)
+      let data;
+      try {
+          data = await this.$store.state.axiosBaseUrl.get("/customers", {
+          headers: Constants.HEADERS
+        })
+        this.customers = data.data
+        this.$store.commit('setCustomers', this.customers)
+      } catch(e) {
+        console.error(e)
+        if(e.response.status === 401) await this.$router.replace({path: '/'})
+      }
+
     }
     this.filteredCustomers = this.customers
   }

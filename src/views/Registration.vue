@@ -14,9 +14,14 @@ export default {
   },
   data() {
     return {
-      inputLabelsAndApiName: ["test1", "test2", "test3"],
       elementToAddInDb: "user",
       confirmationMessage: "Votre compte a été créé avec succès",
+      pseudo: {
+        label: "Pseudo",
+        apiName: "pseudo",
+        type: "lengthLettersNumbers",
+        errorMessage: "Ce champ doit être renseigné et contenir entre 2 et 20 characters et uniquement des chiffres et des lettres."
+      },
       email: {
         label: "Adresse email",
         apiName: "email",
@@ -39,7 +44,7 @@ export default {
   },
   computed: {
     addProductLabelsAndApiName() {
-      return [this.email, this.password, this.passwordConfirmation]
+      return [this.pseudo, this.email, this.password, this.passwordConfirmation]
     }
   }
 }

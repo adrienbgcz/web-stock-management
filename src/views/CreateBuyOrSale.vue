@@ -85,13 +85,15 @@
       </v-col>
     </v-row>
 
-    <ConfirmationPopin :is-display="displayConfirmation" @close="displayConfirmation=false" :message="confirmationMessage"  />
+    <ConfirmationPopin :is-display="displayConfirmation" @close="displayConfirmation=false"
+                       :message="confirmationMessage"/>
 
   </div>
 </template>
 
 <script>
 import ConfirmationPopin from "@/components/ConfirmationPopin";
+import Constants from "@/constants";
 
 export default {
   name: 'CreateBuyOrSale',
@@ -140,27 +142,33 @@ export default {
       }
     },
     async createBill() {
+      let data;
+      try {
+        data = await this.$store.state.axiosBaseUrl.post('/bills', {date: new Date(Date.now()).toLocaleString()}, {
+          headers: Constants.HEADERS
+        })
+      } catch (e) {
+        console.error(e)
+        if (e.response.status === 401) await this.$router.replace({path: '/'})
+      }
 
-      const {data} = await this.$store.state.axiosBaseUrl.post('/bills', {date: new Date(Date.now()).toLocaleString()}, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
-
-      const billId = data
+      const billId = data.data[0]
 
       let transactionsWithBillId = []
 
       this.transactionsToSendInDb.forEach(transaction => transactionsWithBillId.push([
         transaction.quantity, transaction.buying, transaction.deviceId, transaction.customerId, billId
       ]))
-       console.log(transactionsWithBillId)
 
-      await this.$store.state.axiosBaseUrl.post('/transactions', transactionsWithBillId, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
+      let response;
+      try {
+        response = await this.$store.state.axiosBaseUrl.post('/transactions', transactionsWithBillId, {
+          headers: Constants.HEADERS
+        })
+      } catch (e) {
+        console.error(e)
+        if (e.response.status === 401) await this.$router.replace({path: '/'})
+      }
 
       this.displayConfirmation = true
 
@@ -181,22 +189,34 @@ export default {
   async mounted() {
     const options = {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'};
     const date = new Date(Date.now()).toLocaleString()
-    console.log(date)
-    if (this.$store.state.products.length > 0) {
-      this.products = this.$store.state.products
-    } else {
-      const {data} = await this.$store.state.axiosBaseUrl.get("/devices")
-      this.products = data
-      this.$store.commit('setProducts', data)
+
+    let data1;
+    let data2;
+    try {
+      if (this.$store.state.products.length > 0) {
+        this.products = this.$store.state.products
+      } else {
+        data1 = await this.$store.state.axiosBaseUrl.get("/devices", {
+          headers: Constants.HEADERS
+        })
+        this.products = data1.data
+        this.$store.commit('setProducts', this.products)
+      }
+
+      if (this.$store.state.customers.length > 0) {
+        this.customers = this.$store.state.customers
+      } else {
+        data2 = await this.$store.state.axiosBaseUrl.get("/customers", {
+          headers: Constants.HEADERS
+        })
+        this.customers = data2.data
+        this.$store.commit('setCustomers', this.customers)
+      }
+    } catch (e) {
+      console.error(e)
+      if (e.response.status === 401) await this.$router.replace({path: '/'})
     }
 
-    if (this.$store.state.customers.length > 0) {
-      this.customers = this.$store.state.customers
-    } else {
-      const {data} = await this.$store.state.axiosBaseUrl.get("/customers")
-      this.customers = data
-      this.$store.commit('setCustomers', data)
-    }
 
   }
 

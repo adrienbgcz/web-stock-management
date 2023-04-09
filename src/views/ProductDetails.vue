@@ -10,6 +10,7 @@
 
 <script>
 import ProductCard from "@/components/ProductCard";
+import Constants from "@/constants";
 
 export default {
   name: "ProductDetails",
@@ -30,8 +31,17 @@ export default {
     }
   },
   async mounted() {
-    const {data} = await this.$store.state.axiosBaseUrl.get(`devices/${this.$route.params.id}`)
-    this.device = data[0]
+    let data;
+    try {
+        data = await this.$store.state.axiosBaseUrl.get(`devices/${this.$route.params.id}`, {
+        headers: Constants.HEADERS
+      })
+    } catch(e) {
+      console.error(e)
+      if(e.response.status === 401) await this.$router.replace({path: '/'})
+    }
+
+    this.device = data.data[0]
   }
 }
 </script>

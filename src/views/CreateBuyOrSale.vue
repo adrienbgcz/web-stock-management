@@ -61,11 +61,11 @@
         </thead>
         <tbody>
         <tr
-            v-for="product in productsToDisplayInBill"
+            v-for="(product, index) in productsToDisplayInBillComputed"
             :key="product.id">
 
           <td>{{ product.name }}</td>
-          <td>1</td>
+          <td><v-text-field v-model="product.quantity" @input="changeQuantity(product.quantity)" :key="index"></v-text-field></td>
           <td>{{ product.price }} €</td>
         </tr>
         <tr class="font-weight-bold">
@@ -109,7 +109,8 @@ export default {
       errorMessageProduct: '',
       isFormValid: false,
       confirmationMessage: "Votre facture a bien été enregistrée",
-      displayConfirmation: false
+      displayConfirmation: false,
+      transaction: {}
     }
   },
   methods: {
@@ -120,31 +121,59 @@ export default {
     logSelectedCustomer() {
       console.log("SELECTED CUSTOMER", this.selectedCustomer)
     },
+    changeQuantity(quantity) {
+      console.log('ici')
+      this.transaction = {
+        quantity: quantity,
+        buying: true,
+        deviceId: this.selectedProduct?.id,
+        customerId: this.selectedCustomer
+      }
+
+      const productToDisplay = this.getProductToDisplay();
+
+      const index = this.productsToDisplayInBill.findIndex(product => product.id === this.transaction.deviceId);
+      this.productsToDisplayInBill.splice(index, 1, productToDisplay)
+
+      const index2 = this.transactionsToSendInDb.findIndex(product => product.id === this.transaction.deviceId)
+      this.transactionsToSendInDb.splice(index2, 1, this.transaction)
+
+      console.log(this.transactionsToSendInDb)
+
+    },
     addProduct() {
-      const transaction = {
+      this.transaction = {
         quantity: 1,
         buying: true,
         deviceId: this.selectedProduct?.id,
         customerId: this.selectedCustomer
       }
 
-      const productToDisplay = {
-        quantity: 1,
-        name: this.selectedProduct?.name,
-        price: this.selectedProduct?.price
-      }
+      const productToDisplay = this.getProductToDisplay();
+
+      console.log("TRANSACTION", this.transaction)
+      console.log("PRODUCT TO DISPLAY", productToDisplay)
 
       if (this.selectedProduct) {
-        this.transactionsToSendInDb.push(transaction)
+        this.transactionsToSendInDb.push(this.transaction)
         this.productsToDisplayInBill.push(productToDisplay)
       } else {
         this.errorMessageProduct = 'Veuillez sélectionner un produit'
+      }
+
+      console.log(this.transactionsToSendInDb)
+    },
+    getProductToDisplay() {
+      return {
+        quantity: this.transaction.quantity,
+        name: this.selectedProduct?.name,
+        price: this.selectedProduct?.price * this.transaction.quantity
       }
     },
     async createBill() {
       let data;
       try {
-        data = await this.$store.state.axiosBaseUrl.post('/bills', {date: new Date(Date.now()).toLocaleString()}, {
+        data = await this.$store.state.axiosBaseUrl.post('/bills', {date: new Date(Date.now())}, {
           headers: Constants.HEADERS
         })
       } catch (e) {
@@ -152,7 +181,7 @@ export default {
         if (e.response.status === 401) await this.$router.replace({path: '/'})
       }
 
-      const billId = data.data[0]
+      const billId = data.data
 
       let transactionsWithBillId = []
 
@@ -184,11 +213,12 @@ export default {
     },
     isFormValidComputed() {
       return (this.transactionsToSendInDb.length > 0 && (this.selectedCustomer))
+    },
+    productsToDisplayInBillComputed() {
+      return this.productsToDisplayInBill
     }
   },
   async mounted() {
-    const options = {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'};
-    const date = new Date(Date.now()).toLocaleString()
 
     let data1;
     let data2;

@@ -277,6 +277,7 @@ export default {
           }
 
         } else if (this.elementToAddInDb === 'user' || this.elementToAddInDb === 'userConnection' ) {
+
           this.isLoading = true
           const email = this.inputLabelsFormatted.email.value
           const password = this.inputLabelsFormatted.password.value
@@ -287,6 +288,7 @@ export default {
           const url = this.elementToAddInDb === 'user' ? '/users' : '/login'
 
           let response;
+
           try {
             response = await this.$store.state.axiosBaseUrl.post(url, user, {
               headers: Constants.HEADERS
@@ -295,7 +297,8 @@ export default {
             localStorage.setItem('token', response.data.token)
             localStorage.setItem('userPseudo', response.data.user.pseudo)
             localStorage.setItem('userId', response.data.user.userId.toString())
-            if(response.data.user) setTimeout(() =>  this.$router.replace({path: '/products'}), 2000)
+
+            if(response.data.user) setTimeout(() =>  this.$router.replace({path: '/products'}), 4000)
           } catch(e) {
             console.error(e)
             if(e.response.status === 401) {

@@ -1,6 +1,6 @@
 <template>
   <PopinForm :is-registration=true :element-to-add-in-db="elementToAddInDb"
-             :input-labels-and-api-name="addProductLabelsAndApiName" :title="'Inscription'" :confirmation-message="confirmationMessage"/>
+             :input-labels-and-api-name="addLabelsAndApiName" :title="'Inscription'" :confirmation-message="confirmationMessage"/>
 
 </template>
 
@@ -43,7 +43,7 @@ export default {
     }
   },
   computed: {
-    addProductLabelsAndApiName() {
+    addLabelsAndApiName() {
       return [this.pseudo, this.email, this.password, this.passwordConfirmation]
     }
   }

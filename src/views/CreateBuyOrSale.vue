@@ -36,6 +36,8 @@
             dark
             color="#6750A4"
             @click="addProduct"
+            :disabled="!this.selectedCustomer"
+
         >
           <v-icon dark>
             mdi-plus
@@ -57,6 +59,8 @@
           <th class="text-left">
             Prix
           </th>
+          <th>
+          </th>
         </tr>
         </thead>
         <tbody>
@@ -65,8 +69,9 @@
             :key="product.id">
 
           <td>{{ product.name }}</td>
-          <td><v-text-field v-model="product.quantity" @input="changeQuantity(product.quantity)" :key="index"></v-text-field></td>
+          <td><div style="width: 25px"><v-text-field v-model="product.quantity" @input="changeQuantity(product.quantity)" :key="index"></v-text-field></div></td>
           <td>{{ product.price }} €</td>
+          <td><v-icon @click="deleteProduct(index)">mdi-delete</v-icon></td>
         </tr>
         <tr class="font-weight-bold">
           <td></td>
@@ -140,6 +145,11 @@ export default {
 
       console.log(this.transactionsToSendInDb)
 
+    },
+    deleteProduct(index) {
+      this.productsToDisplayInBill.splice(index, 1)
+      this.transactionsToSendInDb.splice(index, 1)
+      console.log(this.transactionsToSendInDb)
     },
     addProduct() {
       this.transaction = {
@@ -257,7 +267,10 @@ export default {
 <style scoped>
 .productColumn {
   width: 60%
+}
 
+.v-text-field input {
+  text-align: center!important;
 }
 
 </style>

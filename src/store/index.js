@@ -9,7 +9,7 @@ Vue.use(Vuex)
 export default new Vuex.Store({
   state: {
     axiosBaseUrl: Axios.create({baseURL: Constants.BASE_URL}),
-    welcomeMessage: false,
+    userPseudo: "",
     products : [],
     customers: [],
   },
@@ -20,8 +20,13 @@ export default new Vuex.Store({
     setCustomers(state, customers) {
       state.customers = customers
     },
-    setWelcomeMessage(state, isDisplay) {
-      state.welcomeMessage = isDisplay
+    setUserPseudo(state, userPseudo) {
+      state.userPseudo = userPseudo
+    },
+    deleteUserPseudo(state) {
+      state.userPseudo = ""
+      state.products = []
+      state.customers = []
     }
 
   },
@@ -30,6 +35,6 @@ export default new Vuex.Store({
   modules: {
   },
   plugins: [createPersistedState({
-    paths: [/*"products", "customers"*/]
+    paths: ["products", "customers", "userPseudo"]
   })]
 })

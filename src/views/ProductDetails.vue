@@ -34,7 +34,10 @@ export default {
     let data;
     try {
         data = await this.$store.state.axiosBaseUrl.get(`devices/${this.$route.params.id}`, {
-        headers: Constants.HEADERS
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem("token")
+          }
       })
     } catch(e) {
       console.error(e)

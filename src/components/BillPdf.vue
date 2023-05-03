@@ -70,13 +70,19 @@ export default {
     let data2;
     try {
       data1 = await this.$store.state.axiosBaseUrl.get(`customers/${this.$route?.params.customerId}`, {
-        headers: Constants.HEADERS
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + localStorage.getItem("token")
+        }
       })
       this.company = data1.data[0].company_name
       this.siret = data1.data[0].siret
       this.phoneNumber = data1.data[0].phone_number
       data2 = await this.$store.state.axiosBaseUrl.get(`/customers/${this.$route?.params.customerId}/bills/${this.$route?.params.billId}/transactions`, {
-        headers: Constants.HEADERS
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + localStorage.getItem("token")
+        }
       })
       this.allTransactionByCustomersAndBillId = data2.data
       console.log(this.allTransactionByCustomersAndBillId)

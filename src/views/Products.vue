@@ -70,10 +70,12 @@ export default {
       this.products = this.$store.state.products
     } else {
       let data;
-      console.log(Constants.HEADERS)
       try {
           data = await this.$store.state.axiosBaseUrl.get("/devices", {
-          headers: Constants.HEADERS
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem("token")
+          }
         })
       } catch(e) {
         console.error(e)

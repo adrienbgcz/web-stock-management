@@ -8,7 +8,7 @@
         height="auto"
     >
 
-      <v-toolbar-title v-if="userConnected.pseudo">Bonjour {{ userConnected.pseudo }} ! </v-toolbar-title>
+      <v-toolbar-title v-if="userConnected">Bonjour {{ userConnected }} ! </v-toolbar-title>
       <v-toolbar-title v-else>Stock Management</v-toolbar-title>
 
 
@@ -73,21 +73,28 @@ export default {
   },
   computed: {
     userConnected() {
-      return this.user
+      console.log("USER",this.$store.state.userPseudo)
+      return this.$store.state.userPseudo
     }
   },
   async mounted() {
     if (localStorage.userId) {
       try {
         const data = await this.$store.state.axiosBaseUrl.get(`/users/${localStorage.userId}`, {
-          headers: Constants.HEADERS
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem("token")
+          }
         })
         this.user = data.data
 
+
+        if(this.$route.path === "/") await this.$router.replace({path: '/products'})
+
       } catch(e) {
         console.error(e)
-        if(e.response.status === 401) {
-          localStorage.removeItem('userPseudo')
+        if(e.response?.status === 401) {
+          this.$store.commit("deleteUserPseudo")
           localStorage.removeItem('userId')
           localStorage.removeItem('token')
           await this.$router.replace({path: '/'})

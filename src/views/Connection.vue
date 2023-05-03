@@ -34,7 +34,8 @@ export default {
     addProductLabelsAndApiName() {
       return [this.email, this.password]
     }
-  }
+  },
+
 }
 
 

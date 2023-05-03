@@ -252,7 +252,10 @@ export default {
           let response;
           try {
             response = await this.$store.state.axiosBaseUrl.post('/devices', product, {
-              headers: Constants.HEADERS
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem("token")
+              }
             })
           } catch(e) {
             console.error(e)
@@ -269,7 +272,10 @@ export default {
           let response;
           try {
             response = await this.$store.state.axiosBaseUrl.post('/customers', customer, {
-              headers: Constants.HEADERS
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem("token")
+              }
             })
           } catch(e) {
             console.error(e)
@@ -291,14 +297,18 @@ export default {
 
           try {
             response = await this.$store.state.axiosBaseUrl.post(url, user, {
-              headers: Constants.HEADERS
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem("token")
+              }
             })
-            this.$store.commit('setWelcomeMessage', true)
-            localStorage.setItem('token', response.data.token)
-            localStorage.setItem('userPseudo', response.data.user.pseudo)
-            localStorage.setItem('userId', response.data.user.userId.toString())
 
-            if(response.data.user) setTimeout(() =>  this.$router.replace({path: '/products'}), 4000)
+            console.log(response.data.user.pseudo)
+            this.$store.commit('setUserPseudo', response.data.user.pseudo)
+            console.log(this.$store.state.userPseudo)
+            localStorage.setItem('token', response.data.token)
+            localStorage.setItem('userId', response.data.user.userId.toString())
+            if(response.data.user) await this.$router.replace({path: '/products'})
           } catch(e) {
             console.error(e)
             if(e.response.status === 401) {
@@ -341,7 +351,10 @@ export default {
   },
   beforeMount() {
     this.initializeForm()
-    if (this.isRegistration || this.isConnection) this.dialog = true;
+    if (this.isRegistration || this.isConnection) {
+      this.dialog = true
+      this.$store.commit("deleteUserPseudo")
+    }
   },
 
 }

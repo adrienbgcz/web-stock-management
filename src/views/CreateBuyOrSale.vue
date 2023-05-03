@@ -184,7 +184,10 @@ export default {
       let data;
       try {
         data = await this.$store.state.axiosBaseUrl.post('/bills', {date: new Date(Date.now())}, {
-          headers: Constants.HEADERS
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem("token")
+          }
         })
       } catch (e) {
         console.error(e)
@@ -202,7 +205,10 @@ export default {
       let response;
       try {
         response = await this.$store.state.axiosBaseUrl.post('/transactions', transactionsWithBillId, {
-          headers: Constants.HEADERS
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem("token")
+          }
         })
       } catch (e) {
         console.error(e)
@@ -237,7 +243,10 @@ export default {
         this.products = this.$store.state.products
       } else {
         data1 = await this.$store.state.axiosBaseUrl.get("/devices", {
-          headers: Constants.HEADERS
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem("token")
+          }
         })
         this.products = data1.data
         this.$store.commit('setProducts', this.products)
@@ -247,7 +256,10 @@ export default {
         this.customers = this.$store.state.customers
       } else {
         data2 = await this.$store.state.axiosBaseUrl.get("/customers", {
-          headers: Constants.HEADERS
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem("token")
+          }
         })
         this.customers = data2.data
         this.$store.commit('setCustomers', this.customers)

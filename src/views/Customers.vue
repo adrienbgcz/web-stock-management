@@ -86,7 +86,10 @@ export default {
       let data;
       try {
           data = await this.$store.state.axiosBaseUrl.get("/customers", {
-          headers: Constants.HEADERS
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + localStorage.getItem("token")
+            }
         })
         this.customers = data.data
         this.$store.commit('setCustomers', this.customers)

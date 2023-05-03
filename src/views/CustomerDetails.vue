@@ -42,12 +42,18 @@ export default {
 
     try {
         data1 = await this.$store.state.axiosBaseUrl.get(`customers/${this.$route?.params.id}`, {
-        headers: Constants.HEADERS
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem("token")
+          }
       })
       this.customer = data1.data[0]
 
         data2 = await this.$store.state.axiosBaseUrl.get(`customers/${this.$route?.params.id}/bills`, {
-        headers: Constants.HEADERS
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem("token")
+          }
       })
       this.bills = data2.data
     } catch(e) {

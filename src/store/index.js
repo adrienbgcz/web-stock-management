@@ -23,6 +23,12 @@ export default new Vuex.Store({
     setUserPseudo(state, userPseudo) {
       state.userPseudo = userPseudo
     },
+    addCustomer(state, customer) {
+      state.customers.push(customer)
+    },
+    addProduct(state, product) {
+      state.customers.push(product)
+    },
     deleteUserPseudo(state) {
       state.userPseudo = ""
       state.products = []

@@ -36,7 +36,7 @@ const routes = [
     path: '/buy-or-sale',
     name: 'CreateBuyOrSale',
     component: function () {
-      return import('../views/CreateBuyOrSale.vue')
+      return import('../views/CreateBill.vue')
     }
   },
   {

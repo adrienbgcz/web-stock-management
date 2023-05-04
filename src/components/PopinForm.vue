@@ -42,6 +42,7 @@
                               @change="validInput(inputLabel.type, inputLabelsFormatted[inputLabel.apiName].value, inputLabel.apiName, inputLabel.label); previewAddedPicture($event)"
                 ></v-file-input>
                 <v-text-field v-else
+                              :type="inputLabel.type === 'password' ? 'password' : 'text'"
                               :label="inputLabel.label + ' *'"
                               :placeholder="inputLabel.label"
                               :error-messages="firstDisplay ? '' : inputLabelsFormatted[inputLabel.apiName] ? !inputLabelsFormatted[inputLabel.apiName].isValidatedData ? inputLabelsFormatted[inputLabel.apiName].errorMessage : '' : ''"
@@ -257,6 +258,7 @@ export default {
                 'Authorization': 'Bearer ' + localStorage.getItem("token")
               }
             })
+            this.$store.commit('addProduct', product)
           } catch(e) {
             console.error(e)
             if(e.response.status === 401) await this.$router.replace({path: '/'})
@@ -277,6 +279,7 @@ export default {
                 'Authorization': 'Bearer ' + localStorage.getItem("token")
               }
             })
+            this.$store.commit('addCustomer', customer)
           } catch(e) {
             console.error(e)
             if(e.response.status === 401) await this.$router.replace({path: '/'})
@@ -303,7 +306,6 @@ export default {
               }
             })
 
-            console.log(response.data.user.pseudo)
             this.$store.commit('setUserPseudo', response.data.user.pseudo)
             console.log(this.$store.state.userPseudo)
             localStorage.setItem('token', response.data.token)

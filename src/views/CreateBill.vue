@@ -10,8 +10,6 @@
         dense
         filled
         label="Choose a customer"
-        @change="logSelectedCustomer"
-        @input="logSelectedCustomer"
     ></v-autocomplete>
 
     <v-row>
@@ -24,7 +22,6 @@
             dense
             filled
             label="Choose a product to add"
-            @change="logSelectedProduct"
             :error-messages="errorMessageProduct"
             return-object
         ></v-autocomplete>
@@ -119,15 +116,45 @@ export default {
     }
   },
   methods: {
-    logSelectedProduct() {
-      this.errorMessageProduct = ''
-      console.log("SELECTED PRODUCT", this.selectedProduct)
+    async getProductsAndCustomers() {
+      try {
+        if (this.$store.state.products.length > 0) {
+          this.products = this.$store.state.products
+        } else {
+          await this.getProducts()
+        }
+
+        if (this.$store.state.customers.length > 0) {
+          this.customers = this.$store.state.customers
+        } else {
+          await this.getCustomers()
+        }
+      } catch (e) {
+        console.error(e)
+        if (e.response?.status === 401) await this.$router.replace({path: '/'})
+      }
     },
-    logSelectedCustomer() {
-      console.log("SELECTED CUSTOMER", this.selectedCustomer)
+    async getProducts() {
+      let data = await this.$store.state.axiosBaseUrl.get("/devices", {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + localStorage.getItem("token")
+        }
+      })
+      this.products = data.data
+      this.$store.commit('setProducts', this.products)
+    },
+    async getCustomers() {
+      let data = await this.$store.state.axiosBaseUrl.get("/customers", {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + localStorage.getItem("token")
+        }
+      })
+      this.customers = data.data
+      this.$store.commit('setCustomers', this.customers)
     },
     changeQuantity(quantity) {
-      console.log('ici')
       this.transaction = {
         quantity: quantity,
         buying: true,
@@ -161,9 +188,6 @@ export default {
 
       const productToDisplay = this.getProductToDisplay();
 
-      console.log("TRANSACTION", this.transaction)
-      console.log("PRODUCT TO DISPLAY", productToDisplay)
-
       if (this.selectedProduct) {
         this.transactionsToSendInDb.push(this.transaction)
         this.productsToDisplayInBill.push(productToDisplay)
@@ -191,7 +215,7 @@ export default {
         })
       } catch (e) {
         console.error(e)
-        if (e.response.status === 401) await this.$router.replace({path: '/'})
+        if (e.response?.status === 401) await this.$router.replace({path: '/'})
       }
 
       const billId = data.data
@@ -212,7 +236,7 @@ export default {
         })
       } catch (e) {
         console.error(e)
-        if (e.response.status === 401) await this.$router.replace({path: '/'})
+        if (e.response?.status === 401) await this.$router.replace({path: '/'})
       }
 
       this.displayConfirmation = true
@@ -232,44 +256,10 @@ export default {
     },
     productsToDisplayInBillComputed() {
       return this.productsToDisplayInBill
-    }
+    },
   },
   async mounted() {
-
-    let data1;
-    let data2;
-    try {
-      if (this.$store.state.products.length > 0) {
-        this.products = this.$store.state.products
-      } else {
-        data1 = await this.$store.state.axiosBaseUrl.get("/devices", {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + localStorage.getItem("token")
-          }
-        })
-        this.products = data1.data
-        this.$store.commit('setProducts', this.products)
-      }
-
-      if (this.$store.state.customers.length > 0) {
-        this.customers = this.$store.state.customers
-      } else {
-        data2 = await this.$store.state.axiosBaseUrl.get("/customers", {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + localStorage.getItem("token")
-          }
-        })
-        this.customers = data2.data
-        this.$store.commit('setCustomers', this.customers)
-      }
-    } catch (e) {
-      console.error(e)
-      if (e.response.status === 401) await this.$router.replace({path: '/'})
-    }
-
-
+    await this.getProductsAndCustomers();
   }
 
 }

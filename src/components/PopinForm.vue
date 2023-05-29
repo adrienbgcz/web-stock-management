@@ -1,6 +1,6 @@
 <template>
   <v-row justify="center">
-    <v-dialog v-if="!isLoginComputed"
+    <v-dialog
         v-model="dialog"
         persistent
         :width="!$vuetify.breakpoint.xs ? '50%' : '80%'"
@@ -53,8 +53,9 @@
                 ></v-text-field>
               </v-col>
             </v-row>
+
             <ConfirmationPopin :is-display="displayConfirmationComputed"
-                               @close="displayConfirmation=false" :message="confirmationMessage"/>
+                               @close="displayConfirmation=false" :message="isError ? errorMessage : confirmationMessage" />
           </v-container>
           <small>* Obligatoire</small>
         </v-card-text>
@@ -78,8 +79,17 @@
             <span class="popinButtons mr-4" v-if="isConnection">Pas encore inscrit ? S'inscrire</span>
           </router-link>
 
+          <div class="text-center" v-if="isLoadingComputed">
+            <v-progress-circular
+                indeterminate
+                color="#6750A4"
+                width="5"
+                size="30"
+            />
+          </div>
+
           <v-btn
-              v-if="!displayConnectionErrorMessageComputed"
+              v-else-if="!displayConnectionErrorMessageComputed && !isLoadingComputed"
               color="white"
               variant="text"
               elevation="0"
@@ -92,12 +102,6 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-    <v-progress-circular
-        v-else
-        :size="50"
-        color="#6750A4"
-        indeterminate
-    ></v-progress-circular>
   </v-row>
 </template>
 
@@ -127,7 +131,10 @@ export default {
     uploadValue: 0,
     previewPicture: null,
     samePasswords: false,
-    displayConnectionErrorMessage: false
+    displayConnectionErrorMessage: false,
+    isLoading: false,
+    isError: false
+
   }),
   props: {
     inputLabelsAndApiName: {
@@ -147,6 +154,9 @@ export default {
     confirmationMessage: {
       type: String,
     },
+    errorMessage: {
+      type: String,
+    },
     isRegistration: {
       type: Boolean,
       default: false
@@ -155,7 +165,6 @@ export default {
       type: Boolean,
       default: false
     }
-
   },
   computed: {
     manageValidateButton() {
@@ -167,7 +176,7 @@ export default {
     displayConnectionErrorMessageComputed() {
       return this.displayConnectionErrorMessage
     },
-    isLoginComputed() {
+    isLoadingComputed() {
       return this.isLoading
     }
   },
@@ -178,11 +187,15 @@ export default {
 
       switch (type) {
         case "lengthLettersNumbers" :
-          regex = /^[a-zA-Z0-9éèàêïî]{2,20}$/
+          regex = /^[a-zA-Z0-9éèàêïî ]{2,20}$/
           this.setValidatedData(value, regex, apiName, label, type)
           break;
-        case "number" :
-          regex = /^[0-9]{1,4}$/
+        case "integer" :
+          regex = /^[0-9]{1,10}$/
+          this.setValidatedData(value, regex, apiName, label, type)
+          break;
+        case "double" :
+          regex = /^[0-9]{1,10}(\.[0-9]{0,2})?$/
           this.setValidatedData(value, regex, apiName, label, type)
           break;
         case "picture" :
@@ -204,9 +217,7 @@ export default {
           break;
         case "passwordConfirmation" :
           this.samePasswords = false
-          console.log(this.inputLabelsFormatted[apiName].value)
           if (this.inputLabelsFormatted[apiName].value === this.inputLabelsFormatted["password"].value && this.inputLabelsFormatted[apiName].value.length !== 0 && this.inputLabelsFormatted["password"].value.length !== 0) this.samePasswords = true
-          console.log(this.samePasswords)
           this.setValidatedData(value, regex, apiName, label, type, this.samePasswords)
           break;
       }
@@ -239,6 +250,7 @@ export default {
       this.firstDisplay = true
     },
     async add() {
+      this.isLoading = true
       try {
         if (this.elementToAddInDb === 'product') {
           if (this.inputLabelsFormatted.picture) await this.uploadPicture()
@@ -247,10 +259,11 @@ export default {
           const stock_quantity = this.inputLabelsFormatted.stock_quantity.value
           const serial_number = this.inputLabelsFormatted.serial_number.value
           const picture = this.firebaseUrl
+          const user_id = localStorage.getItem("userId")
 
-          const product = {name, price, serial_number, stock_quantity, picture}
+          const product = {name, price, serial_number, stock_quantity, picture, user_id}
 
-          let response;
+          let response
           try {
             response = await this.$store.state.axiosBaseUrl.post('/devices', product, {
               headers: {
@@ -258,9 +271,11 @@ export default {
                 'Authorization': 'Bearer ' + localStorage.getItem("token")
               }
             })
-            this.$store.commit('addProduct', product)
+            this.$store.commit('addProduct', {...response.data.deviceCreated})
+            this.isError = false
           } catch(e) {
             console.error(e)
+            this.isError = true
             if(e.response.status === 401) await this.$router.replace({path: '/'})
           }
 
@@ -268,8 +283,9 @@ export default {
           const company_name = this.inputLabelsFormatted.company_name.value
           const siret = this.inputLabelsFormatted.siret.value
           const phone_number = this.inputLabelsFormatted.phone_number.value
+          const user_id = localStorage.getItem("userId")
 
-          const customer = {company_name, siret, phone_number}
+          const customer = {company_name, siret, phone_number, user_id}
 
           let response;
           try {
@@ -279,22 +295,24 @@ export default {
                 'Authorization': 'Bearer ' + localStorage.getItem("token")
               }
             })
-            this.$store.commit('addCustomer', customer)
+            this.$store.commit('addCustomer', {...response.data.customerCreated})
+            this.isError = false
           } catch(e) {
             console.error(e)
+            this.isError = true
             if(e.response.status === 401) await this.$router.replace({path: '/'})
           }
 
-        } else if (this.elementToAddInDb === 'user' || this.elementToAddInDb === 'userConnection' ) {
+        } else if (this.elementToAddInDb === 'user' || this.elementToAddInDb === 'userConnection') {
 
-          this.isLoading = true
+
           const email = this.inputLabelsFormatted.email.value
           const password = this.inputLabelsFormatted.password.value
           const pseudo = this.inputLabelsFormatted.pseudo?.value
 
           const user = this.elementToAddInDb === 'user' ? {email, password, pseudo} : {email, password}
 
-          const url = this.elementToAddInDb === 'user' ? '/users' : '/login'
+          const url = this.elementToAddInDb === 'user' ? '/signup' : '/login'
 
           let response;
 
@@ -307,7 +325,6 @@ export default {
             })
 
             this.$store.commit('setUserPseudo', response.data.user.pseudo)
-            console.log(this.$store.state.userPseudo)
             localStorage.setItem('token', response.data.token)
             localStorage.setItem('userId', response.data.user.userId.toString())
             if(response.data.user) await this.$router.replace({path: '/products'})
@@ -317,17 +334,16 @@ export default {
               this.displayConnectionErrorMessage = true
             }
           }
-          this.isLoading = false
         }
+        this.isLoading = false
 
         if(this.elementToAddInDb !== 'userConnection') {
           this.displayConfirmation = true
           this.dialog = false
         }
-        console.log(this.dialog)
+
       } catch (e) {
         console.error(e)
-        /*this.displayErrorMessage = true*/
       }
     },
     previewAddedPicture(picture) {

@@ -1,15 +1,25 @@
 <template>
   <div class="home">
-
-    <div v-if='productsList.length !== 0' v-for="product in productsList" :key="product.id" class="cardContainer">
+    <div class="text-center" v-if="isLoadingComputed">
+      <v-progress-circular
+         indeterminate
+         color="#6750A4"
+         width="7"
+         size="70"
+      />
+    </div>
+    <div  v-else v-for="product in productsList" :key="product.id" class="cardContainer">
       <router-link :to="`/product-details/${product.id}`">
         <ProductCard :product-name="product.name" :price="product.price" :stock="product.stock_quantity"
                      :picture="product.picture" class="mt-10"/>
       </router-link>
     </div>
+
+
     <div class="my-2">
       <PopinForm :input-labels-and-api-name="addProductLabelsAndApiName" :element-to-add-in-db="'product'"
-                 :title="'Ajouter un produit'" :icon="'mdi-devices'" :confirmation-message="'Votre produit a bien été ajouté.'"/>
+                 :title="'Ajouter un produit'" :icon="'mdi-devices'" :confirmation-message="'Votre produit a bien été ajouté.'"
+                 :error-message="'Une erreur est suvenue pendant l\'ajout du produit'" />
     </div>
 
   </div>
@@ -45,15 +55,16 @@ export default {
       price: {
         label: "Prix",
         apiName: "price",
-        type: "number",
-        errorMessage: "Ce champ doit être renseigné et ne contenir que des chiffres"
+        type: "double",
+        errorMessage: "Ce champ doit être renseigné et ne contenir que des chiffres. Utilisez un point (et pas une virgule) pour les décimaux (ex: 10.99)"
       },
       stock: {
         label: "Stock",
         apiName: "stock_quantity",
-        type: "number",
+        type: "integer",
         errorMessage: "Ce champ doit être renseigné et ne contenir que des chiffres"
       },
+      isLoading: false
     }
   },
   computed: {
@@ -62,16 +73,20 @@ export default {
     },
     addProductLabelsAndApiName() {
       return [this.picture, this.productName, this.serialNumber, this.price, this.stock]
+    },
+    isLoadingComputed() {
+      return this.isLoading
     }
   },
   methods: {},
   async mounted() {
+    this.isLoading = true
     if(this.$store.state.products.length > 0) {
       this.products = this.$store.state.products
     } else {
       let data;
       try {
-          data = await this.$store.state.axiosBaseUrl.get("/devices", {
+          data = await this.$store.state.axiosBaseUrl.get(`/devices/user/${localStorage.userId}`, {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + localStorage.getItem("token")
@@ -83,9 +98,9 @@ export default {
       }
 
       this.products = data.data
-      this.$store.commit('setProducts', data)
+      this.$store.commit('setProducts', this.products)
     }
-
+    this.isLoading = false
   }
 }
 </script>

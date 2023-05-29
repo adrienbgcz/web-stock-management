@@ -54,11 +54,11 @@ export default {
       required: true
     },
     price: {
-      type: Number,
+      type: Number | String,
       required: true
     },
     stock: {
-      type: Number,
+      type: Number | String,
       required: true
     },
     picture: {

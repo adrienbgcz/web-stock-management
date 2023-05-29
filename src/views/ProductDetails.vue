@@ -33,7 +33,7 @@ export default {
   async mounted() {
     let data;
     try {
-        data = await this.$store.state.axiosBaseUrl.get(`devices/${this.$route.params.id}`, {
+        data = await this.$store.state.axiosBaseUrl.get(`devices/${this.$route.params.id}/user/${localStorage.userId}`, {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + localStorage.getItem("token")

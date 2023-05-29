@@ -13,7 +13,6 @@
         :pdf-quality="2"
         :manual-pagination="false"
         pdf-format="a4"
-        pdf-orientation="landscape"
         pdf-content-width="100%"
         ref="html2Pdf"
     >
@@ -31,6 +30,45 @@
             <span>Tel: {{ phoneNumber }}</span>
           </div>
         </div>
+
+        <v-simple-table class="table">
+          <template v-slot:default>
+            <thead>
+            <tr>
+              <th class="textLeft productColumn">
+                Produit
+              </th>
+              <th class="textLeft">
+                Quantité
+              </th>
+              <th class="textLeft">
+                Prix
+              </th>
+              <th>
+              </th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr
+                v-for="(product) in allTransactionByCustomersAndBillId"
+                :key="product.id">
+
+              <td>{{ product.name }}</td>
+              <td>{{ product.quantity }}</td>
+              <td>{{ product.price }} €</td>
+            </tr>
+            <tr class="totalPrice">
+              <td></td>
+              <td>Total</td>
+              <td>{{ totalPrice }} € TTC</td>
+            </tr>
+            </tbody>
+          </template>
+        </v-simple-table>
+
+        <footer class="footer" >
+          <p>© 2018 Gandalf</p>
+        </footer>
       </section>
     </VueHtml2pdf>
   </div>
@@ -42,6 +80,9 @@ import Constants from "@/constants";
 
 export default {
   name: "BillPdf",
+  components: {
+    VueHtml2pdf,
+  },
   data() {
     return {
       billName: `commande#${this.$route.orderId}`,
@@ -51,20 +92,22 @@ export default {
       phoneNumber: ''
     }
   },
-  computed: {
-    /*companyComputed() {
-      console.log('ici')
-      return this.company ? this.company : {name: "Loading", adress: "Loading"}
-    },*/
-    /*customerComputed() {
-      return this.customer ? this.customer : {name: "Loading", email: '', description: ''}
-
+  methods: {
+    generateReport() {
+      this.$refs.html2Pdf.generatePdf()
+    },
+    goBack() {
+      this.$router.go(-1)
     }
-*/
   },
-  components: {
-    VueHtml2pdf,
+  computed: {
+    totalPrice() {
+      let total = 0
+      this.allTransactionByCustomersAndBillId.forEach(transaction => total += transaction.price)
+      return total
+    }
   },
+
   async mounted() {
     let data1;
     let data2;
@@ -85,22 +128,12 @@ export default {
         }
       })
       this.allTransactionByCustomersAndBillId = data2.data
-      console.log(this.allTransactionByCustomersAndBillId)
       this.generateReport()
     } catch (e) {
       console.error(e)
       if (e.response.status === 401) await this.$router.replace({path: '/'})
     }
-
-  },
-  methods: {
-    generateReport() {
-      this.$refs.html2Pdf.generatePdf()
-    },
-    goBack() {
-      this.$router.go(-1);
-    }
-  },
+  }
 }
 </script>
 
@@ -133,26 +166,49 @@ export default {
   width: 90%;
   padding: 40px;
   border: solid;
-
 }
 
 .client {
   display: flex;
   flex-direction: column;
   border: solid;
-  border-width: medium;
+  border-width: thin;
   color: black;
   padding: 40px;
   width: 50%;
   margin-top: 100px;
   font-family: Arial, sans-serif;
-  font-size: large;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
 
+}
+
+.productColumn {
+  width: 60%
+}
+
+.textLeft {
+  text-align: left;
+}
+
+.pdfContent {
+  font-family: Arial, serif;
+}
+
+.totalPrice {
+  font-weight: bold;
+}
+
+.table {
+  margin-top: 40px;
+}
+
+.footer {
+  position: relative;
+  top: 50px;
 }
 
 </style>

@@ -8,7 +8,7 @@
         height="auto"
     >
 
-      <v-toolbar-title v-if="userConnected">Bonjour {{ userConnected }} ! </v-toolbar-title>
+      <v-toolbar-title v-if="userConnected">Bonjour {{ userConnected }} ! <div class="disconnectionButton mt-1" @click="disconnection">Déconnexion</div></v-toolbar-title>
       <v-toolbar-title v-else>Stock Management</v-toolbar-title>
 
 
@@ -71,9 +71,15 @@ export default {
       user: {}
     }
   },
+  methods: {
+    disconnection() {
+      localStorage.removeItem('token')
+      localStorage.removeItem('userId')
+      this.$router.replace({path: '/'})
+    }
+  },
   computed: {
     userConnected() {
-      console.log("USER",this.$store.state.userPseudo)
       return this.$store.state.userPseudo
     }
   },
@@ -87,8 +93,7 @@ export default {
           }
         })
         this.user = data.data
-
-
+        this.$store.commit('setUserPseudo', this.user.pseudo)
         if(this.$route.path === "/") await this.$router.replace({path: '/products'})
 
       } catch(e) {
@@ -127,5 +132,14 @@ export default {
 
 * {
   text-decoration: inherit;
+}
+
+.disconnectionButton {
+  font-size: small;
+  text-decoration: underline;
+}
+
+.disconnectionButton:hover {
+  cursor: pointer;
 }
 </style>

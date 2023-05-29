@@ -27,14 +27,17 @@ export default new Vuex.Store({
       state.customers.push(customer)
     },
     addProduct(state, product) {
-      state.customers.push(product)
+      state.products.push(product)
     },
     deleteUserPseudo(state) {
       state.userPseudo = ""
       state.products = []
       state.customers = []
+    },
+    resetProductsAndCustomers(state) {
+      state.products = []
+      state.customers = []
     }
-
   },
   actions: {
   },

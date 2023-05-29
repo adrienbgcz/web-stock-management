@@ -10,15 +10,23 @@
       ></v-text-field>
     </div>
 
-
-    <div v-if='customersList.length !== 0' v-for="customer in filteredCustomersList" :key="customer.id" >
+    <div class="text-center" v-if="isLoadingComputed">
+      <v-progress-circular
+          indeterminate
+          color="#6750A4"
+          width="7"
+          size="70"
+      />
+    </div>
+    <div v-else v-for="customer in filteredCustomersList" :key="customer.id" >
       <router-link :to="`/customer-details/${customer.id}`">
         <CustomerCard :company-name="customer.company_name" class="mt-10"/>
       </router-link>
     </div>
     <div class="my-2">
       <PopinForm :input-labels-and-api-name="addCustomerLabelsAndApiName" :element-to-add-in-db="'customer'"
-                 :title="'Ajouter un partenaire'" :icon="'mdi-account-outline'" :confirmation-message="'Le partenaire a bien été ajouté'"/>
+                 :title="'Ajouter un partenaire'" :icon="'mdi-account-outline'" :confirmation-message="'Le partenaire a bien été ajouté'"
+                 :error-message="'Une erreur est survenue pendant l\'ajout du partenaire'"/>
     </div>
 
   </div>
@@ -61,6 +69,7 @@ export default {
         type: "phoneNumber",
         errorMessage: "Ce champ doit être renseigné et contenir 10 chiffres"
       },
+      isLoading: false
     }
   },
   computed: {
@@ -72,6 +81,9 @@ export default {
     },
     filteredCustomersList() {
       return this.filteredCustomers
+    },
+    isLoadingComputed() {
+      return this.isLoading
     }
   },
   methods: {
@@ -80,12 +92,13 @@ export default {
     }
   },
   async mounted() {
+    this.isLoading = true
     if(this.$store.state.customers.length > 0) {
       this.customers = this.$store.state.customers
     } else {
       let data;
       try {
-          data = await this.$store.state.axiosBaseUrl.get("/customers", {
+          data = await this.$store.state.axiosBaseUrl.get(`/customers/user/${localStorage.userId}`, {
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer ' + localStorage.getItem("token")
@@ -100,6 +113,7 @@ export default {
 
     }
     this.filteredCustomers = this.customers
+    this.isLoading = false
   }
 }
 </script>

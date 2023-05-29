@@ -4,6 +4,7 @@
 
     <v-autocomplete
         v-model="selectedCustomer"
+        @change="transaction.customerId = selectedCustomer"
         :items="customers"
         item-text="company_name"
         item-value="id"
@@ -66,7 +67,7 @@
             :key="product.id">
 
           <td>{{ product.name }}</td>
-          <td><div style="width: 25px"><v-text-field v-model="product.quantity" @input="changeQuantity(product.quantity)" :key="index"></v-text-field></div></td>
+          <td><div style="width: 60px"><input size="30px" type="number" min="1" step="1" :max="selectedProduct.stock_quantity" v-model.number="product.quantity" @input="changeQuantity(product.quantity)"><div style="color: darkgrey">max:{{selectedProduct.stock_quantity}}</div><!--<v-text-field v-model.number="product.quantity" @input="changeQuantity(product.quantity)" :key="index"></v-text-field>--></div></td>
           <td>{{ product.price }} €</td>
           <td><v-icon @click="deleteProduct(index)">mdi-delete</v-icon></td>
         </tr>
@@ -82,13 +83,14 @@
     <v-row justify="center">
       <v-col cols="6">
         <v-btn block rounded size="x-large" color="#6750A4" style="color:white" class="mt-10"
-               :disabled="!isFormValidComputed" @click="createBill">Enregistrer
+               :disabled="!isFormValidComputed" @click="createBill" :loading="isLoadingComputed">Enregistrer
         </v-btn>
       </v-col>
     </v-row>
 
-    <ConfirmationPopin :is-display="displayConfirmation" @close="displayConfirmation=false"
-                       :message="confirmationMessage"/>
+    <ConfirmationPopin :is-display="displayConfirmation && !isLoadingComputed" @close="displayConfirmation=false"
+                       :message="isCreateBillError ? errorMessageCreateBill : confirmationMessage"/>
+
 
   </div>
 </template>
@@ -112,7 +114,10 @@ export default {
       isFormValid: false,
       confirmationMessage: "Votre facture a bien été enregistrée",
       displayConfirmation: false,
-      transaction: {}
+      transaction: {},
+      isLoading: false,
+      isCreateBillError: false,
+      errorMessageCreateBill: "Une erreur est survenue pendant l'enregistrement"
     }
   },
   methods: {
@@ -135,7 +140,7 @@ export default {
       }
     },
     async getProducts() {
-      let data = await this.$store.state.axiosBaseUrl.get("/devices", {
+      let data = await this.$store.state.axiosBaseUrl.get(`/devices/user/${localStorage.userId}`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ' + localStorage.getItem("token")
@@ -145,7 +150,7 @@ export default {
       this.$store.commit('setProducts', this.products)
     },
     async getCustomers() {
-      let data = await this.$store.state.axiosBaseUrl.get("/customers", {
+      let data = await this.$store.state.axiosBaseUrl.get(`/customers/user/${localStorage.userId}`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ' + localStorage.getItem("token")
@@ -156,37 +161,37 @@ export default {
     },
     changeQuantity(quantity) {
       this.transaction = {
-        quantity: quantity,
-        buying: true,
+        quantity,
         deviceId: this.selectedProduct?.id,
         customerId: this.selectedCustomer
       }
 
       const productToDisplay = this.getProductToDisplay();
 
+      // This array is used to format products to display in front AND check if quantity selected is valid
       const index = this.productsToDisplayInBill.findIndex(product => product.id === this.transaction.deviceId);
       this.productsToDisplayInBill.splice(index, 1, productToDisplay)
 
+      // This array contains transactions formatted to save in database
       const index2 = this.transactionsToSendInDb.findIndex(product => product.id === this.transaction.deviceId)
       this.transactionsToSendInDb.splice(index2, 1, this.transaction)
 
-      console.log(this.transactionsToSendInDb)
-
     },
+
     deleteProduct(index) {
       this.productsToDisplayInBill.splice(index, 1)
       this.transactionsToSendInDb.splice(index, 1)
-      console.log(this.transactionsToSendInDb)
     },
     addProduct() {
       this.transaction = {
         quantity: 1,
-        buying: true,
         deviceId: this.selectedProduct?.id,
         customerId: this.selectedCustomer
       }
 
       const productToDisplay = this.getProductToDisplay();
+
+      console.log("PRODUCT TO DISPLAY", productToDisplay)
 
       if (this.selectedProduct) {
         this.transactionsToSendInDb.push(this.transaction)
@@ -195,53 +200,71 @@ export default {
         this.errorMessageProduct = 'Veuillez sélectionner un produit'
       }
 
-      console.log(this.transactionsToSendInDb)
     },
     getProductToDisplay() {
       return {
         quantity: this.transaction.quantity,
         name: this.selectedProduct?.name,
-        price: this.selectedProduct?.price * this.transaction.quantity
+        price: this.selectedProduct?.price * this.transaction.quantity,
+        stockQuantity: this.selectedProduct.stock_quantity,
+        isValidSelectedQuantity: this.transaction.quantity <= this.selectedProduct.stock_quantity
       }
     },
     async createBill() {
-      let data;
       try {
-        data = await this.$store.state.axiosBaseUrl.post('/bills', {date: new Date(Date.now())}, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + localStorage.getItem("token")
-          }
-        })
-      } catch (e) {
+        this.isLoading = true
+        let data = await this.createBillAndGetBillId();
+        const billId = data.data
+
+        let transactionsWithBillId = []
+
+        this.transactionsToSendInDb.forEach(transaction => transactionsWithBillId.push([
+          transaction.quantity, transaction.deviceId, transaction.customerId, billId
+        ]))
+
+        await this.postTransactions(transactionsWithBillId)
+
+        this.isCreateBillError = false
+
+        this.$store.commit("resetProductsAndCustomers")
+
+      } catch(e) {
         console.error(e)
-        if (e.response?.status === 401) await this.$router.replace({path: '/'})
+        this.isCreateBillError = true
       }
-
-      const billId = data.data
-
-      let transactionsWithBillId = []
-
-      this.transactionsToSendInDb.forEach(transaction => transactionsWithBillId.push([
-        transaction.quantity, transaction.buying, transaction.deviceId, transaction.customerId, billId
-      ]))
-
-      let response;
-      try {
-        response = await this.$store.state.axiosBaseUrl.post('/transactions', transactionsWithBillId, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + localStorage.getItem("token")
-          }
-        })
-      } catch (e) {
-        console.error(e)
-        if (e.response?.status === 401) await this.$router.replace({path: '/'})
-      }
-
+      this.isLoading = false
       this.displayConfirmation = true
 
+    },
+    async createBillAndGetBillId() {
+      try {
+        return await this.$store.state.axiosBaseUrl.post('/bills', {date: new Date(Date.now())}, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem("token")
+          }
+        })
+      } catch (e) {
+        console.error(e)
+        if (e.response?.status === 401) await this.$router.replace({path: '/'})
+        throw e
+      }
+    },
+    async postTransactions(transactionsWithBillId) {
+      try {
+        await this.$store.state.axiosBaseUrl.post('/transactions', transactionsWithBillId, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem("token")
+          }
+        })
+      } catch (e) {
+        console.error(e)
+        if (e.response?.status === 401) await this.$router.replace({path: '/'})
+        throw e
+      }
     }
+
   },
   computed: {
     totalPrice() {
@@ -252,11 +275,15 @@ export default {
       return totalPrice
     },
     isFormValidComputed() {
-      return (this.transactionsToSendInDb.length > 0 && (this.selectedCustomer))
+      const areValidQuantitiesSelected = this.productsToDisplayInBill.some(product => product.isValidSelectedQuantity)
+      return (this.transactionsToSendInDb.length > 0 && this.selectedCustomer && areValidQuantitiesSelected)
     },
     productsToDisplayInBillComputed() {
       return this.productsToDisplayInBill
     },
+    isLoadingComputed() {
+      return this.isLoading
+    }
   },
   async mounted() {
     await this.getProductsAndCustomers();
@@ -269,6 +296,10 @@ export default {
 <style scoped>
 .productColumn {
   width: 60%
+}
+
+input[type='number']{
+  width: 50px;
 }
 
 .v-text-field input {

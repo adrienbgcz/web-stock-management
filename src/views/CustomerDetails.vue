@@ -19,7 +19,7 @@
 
 <script>
 import CustomerCard from "@/components/CustomerCard";
-import BillNumberAndDateCard from "@/components/CustomerDetailsOrderCard";
+import BillNumberAndDateCard from "@/components/CustomerDetailsBillCard";
 import Constants from "@/constants";
 
 export default {

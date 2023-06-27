@@ -31,25 +31,25 @@
             <div v-if="imageData!=null" class="previewPictureCss">
               <img v-if="previewPicture" class="preview mb-3" height="268" width="356" :src="previewPicture">
             </div>
-            <v-row v-for="inputLabel in inputLabelsAndApiName" :key="inputLabel.apiName">
+            <v-row v-for="inputInfo in inputLabelsAndApiName" :key="inputInfo.apiName">
               <v-col cols="12">
-                <v-file-input v-if="inputLabel.type === 'picture'"
+                <v-file-input v-if="inputInfo.type === 'picture'"
                               :rules="rules"
                               accept="image/png, image/jpeg, image/bmp"
                               placeholder="Ajouter une image"
                               prepend-icon="mdi-camera"
                               label="Ajouter une image"
-                              @change="validInput(inputLabel.type, inputLabelsFormatted[inputLabel.apiName].value, inputLabel.apiName, inputLabel.label); previewAddedPicture($event)"
+                              @change="validInput(inputInfo.type, inputLabelsFormatted[inputInfo.apiName].value, inputInfo.apiName, inputInfo.label); previewAddedPicture($event)"
                 ></v-file-input>
                 <v-text-field v-else
-                              :type="inputLabel.type === 'password' ? 'password' : 'text'"
-                              :label="inputLabel.label + ' *'"
-                              :placeholder="inputLabel.label"
-                              :error-messages="firstDisplay ? '' : inputLabelsFormatted[inputLabel.apiName] ? !inputLabelsFormatted[inputLabel.apiName].isValidatedData ? inputLabelsFormatted[inputLabel.apiName].errorMessage : '' : ''"
+                              :type="inputInfo.type === 'password' ? 'password' : 'text'"
+                              :label="inputInfo.label + ' *'"
+                              :placeholder="inputInfo.label"
+                              :error-messages="firstDisplay ? '' : inputLabelsFormatted[inputInfo.apiName] ? !inputLabelsFormatted[inputInfo.apiName].isValidatedData ? inputLabelsFormatted[inputInfo.apiName].errorMessage : '' : ''"
                               outlined
                               required
-                              v-model="inputLabelsFormatted[inputLabel.apiName].value"
-                              @input="validInput(inputLabel.type, inputLabelsFormatted[inputLabel.apiName].value, inputLabel.apiName, inputLabel.label)"
+                              v-model="inputLabelsFormatted[inputInfo.apiName].value"
+                              @input="validInput(inputInfo.type, inputLabelsFormatted[inputInfo.apiName].value, inputInfo.apiName, inputInfo.label)"
                 ></v-text-field>
               </v-col>
             </v-row>
@@ -188,41 +188,41 @@ export default {
       switch (type) {
         case "lengthLettersNumbers" :
           regex = /^[a-zA-Z0-9éèàêïî ]{2,20}$/
-          this.setValidatedData(value, regex, apiName, label, type)
+          this.setValidatedData(value, regex, apiName, type)
           break;
         case "integer" :
           regex = /^[0-9]{1,10}$/
-          this.setValidatedData(value, regex, apiName, label, type)
+          this.setValidatedData(value, regex, apiName, type)
           break;
         case "double" :
           regex = /^[0-9]{1,10}(\.[0-9]{0,2})?$/
-          this.setValidatedData(value, regex, apiName, label, type)
+          this.setValidatedData(value, regex, apiName, type)
           break;
         case "picture" :
           this.inputLabelsFormatted[apiName].isValidatedData = true
           break;
         case "phoneNumber" :
           regex = /^[0-9]{10}$/
-          this.setValidatedData(value, regex, apiName, label, type)
+          this.setValidatedData(value, regex, apiName, type)
           break;
         case "email" :
           regex = /^[a-z0-9._\-]{2,30}@[a-z0-9]{2,30}\.[a-z]{2,4}$/
-          this.setValidatedData(value, regex, apiName, label, type)
+          this.setValidatedData(value, regex, apiName, type)
           break;
         case "password" :
           this.samePasswords = false
           if (this.inputLabelsFormatted[apiName].value === this.inputLabelsFormatted["passwordConfirmation"]?.value) this.samePasswords = true
           regex = /^((?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%?=*&]).{8,20})$/
-          this.setValidatedData(value, regex, apiName, label, type, this.samePasswords)
+          this.setValidatedData(value, regex, apiName, type, this.samePasswords)
           break;
         case "passwordConfirmation" :
           this.samePasswords = false
           if (this.inputLabelsFormatted[apiName].value === this.inputLabelsFormatted["password"].value && this.inputLabelsFormatted[apiName].value.length !== 0 && this.inputLabelsFormatted["password"].value.length !== 0) this.samePasswords = true
-          this.setValidatedData(value, regex, apiName, label, type, this.samePasswords)
+          this.setValidatedData(value, regex, apiName, type, this.samePasswords)
           break;
       }
     },
-    setValidatedData(value, regex, apiName, label, type, samePasswords) {
+    setValidatedData(value, regex, apiName, type, samePasswords) {
       this.firstDisplay = false
       if (type !== "passwordConfirmation") this.isFound = Boolean(value.match(regex))
 
@@ -247,6 +247,7 @@ export default {
           errorMessage: element.errorMessage
         })
       })
+      console.log(this.inputLabelsFormatted)
       this.firstDisplay = true
     },
     async add() {
@@ -374,6 +375,8 @@ export default {
       this.$store.commit("deleteUserPseudo")
     }
   },
+
+
 
 }
 </script>

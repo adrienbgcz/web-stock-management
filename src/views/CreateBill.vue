@@ -65,9 +65,8 @@
         <tr
             v-for="(product, index) in productsToDisplayInBillComputed"
             :key="product.id">
-
           <td>{{ product.name }}</td>
-          <td><div style="width: 60px"><input size="30px" type="number" min="1" step="1" :max="selectedProduct.stock_quantity" v-model.number="product.quantity" @input="changeQuantity(product.quantity)"><div style="color: darkgrey">max:{{selectedProduct.stock_quantity}}</div><!--<v-text-field v-model.number="product.quantity" @input="changeQuantity(product.quantity)" :key="index"></v-text-field>--></div></td>
+          <td><div style="width: 60px"><input size="30px" type="number" min="1" step="1" :max="product.stockQuantity" v-model.number="product.quantity" @input="changeQuantity(product)"><div style="color: darkgrey">max:{{product.stockQuantity}}</div></div></td>
           <td>{{ product.price }} €</td>
           <td><v-icon @click="deleteProduct(index)">mdi-delete</v-icon></td>
         </tr>
@@ -121,6 +120,9 @@ export default {
     }
   },
   methods: {
+    print() {
+      console.log(this.selectedProduct)
+    },
     async getProductsAndCustomers() {
       try {
         if (this.$store.state.products.length > 0) {
@@ -159,25 +161,24 @@ export default {
       this.customers = data.data
       this.$store.commit('setCustomers', this.customers)
     },
-    changeQuantity(quantity) {
+    changeQuantity(product) {
       this.transaction = {
-        quantity,
-        deviceId: this.selectedProduct?.id,
+        quantity : product.quantity,
+        deviceId: product.id,
         customerId: this.selectedCustomer
       }
 
-      const productToDisplay = this.getProductToDisplay();
+      const productToDisplay = this.getProductToDisplay(product);
 
       // This array is used to format products to display in front AND check if quantity selected is valid
       const index = this.productsToDisplayInBill.findIndex(product => product.id === this.transaction.deviceId);
       this.productsToDisplayInBill.splice(index, 1, productToDisplay)
 
       // This array contains transactions formatted to save in database
-      const index2 = this.transactionsToSendInDb.findIndex(product => product.id === this.transaction.deviceId)
+      const index2 = this.transactionsToSendInDb.findIndex(product => product.deviceId === this.transaction.deviceId)
       this.transactionsToSendInDb.splice(index2, 1, this.transaction)
 
     },
-
     deleteProduct(index) {
       this.productsToDisplayInBill.splice(index, 1)
       this.transactionsToSendInDb.splice(index, 1)
@@ -189,9 +190,7 @@ export default {
         customerId: this.selectedCustomer
       }
 
-      const productToDisplay = this.getProductToDisplay();
-
-      console.log("PRODUCT TO DISPLAY", productToDisplay)
+      const productToDisplay = this.getProductToDisplay(this.selectedProduct);
 
       if (this.selectedProduct) {
         this.transactionsToSendInDb.push(this.transaction)
@@ -199,15 +198,17 @@ export default {
       } else {
         this.errorMessageProduct = 'Veuillez sélectionner un produit'
       }
-
     },
-    getProductToDisplay() {
+    getProductToDisplay(product) {
+      const initialProduct = this.products.find(element => element.id === product.id)
+
       return {
+        id: this.transaction.deviceId,
         quantity: this.transaction.quantity,
-        name: this.selectedProduct?.name,
-        price: this.selectedProduct?.price * this.transaction.quantity,
-        stockQuantity: this.selectedProduct.stock_quantity,
-        isValidSelectedQuantity: this.transaction.quantity <= this.selectedProduct.stock_quantity
+        name: initialProduct?.name,
+        price: initialProduct?.price * this.transaction.quantity,
+        stockQuantity: initialProduct?.stock_quantity,
+        isValidSelectedQuantity: this.transaction.quantity <= initialProduct?.stock_quantity
       }
     },
     async createBill() {
@@ -216,11 +217,9 @@ export default {
         let data = await this.createBillAndGetBillId();
         const billId = data.data
 
-        let transactionsWithBillId = []
-
-        this.transactionsToSendInDb.forEach(transaction => transactionsWithBillId.push([
+        const transactionsWithBillId = this.transactionsToSendInDb.map(transaction => [
           transaction.quantity, transaction.deviceId, transaction.customerId, billId
-        ]))
+        ])
 
         await this.postTransactions(transactionsWithBillId)
 
@@ -275,7 +274,7 @@ export default {
       return totalPrice
     },
     isFormValidComputed() {
-      const areValidQuantitiesSelected = this.productsToDisplayInBill.some(product => product.isValidSelectedQuantity)
+      const areValidQuantitiesSelected = !(this.productsToDisplayInBill.some(product => !product.isValidSelectedQuantity))
       return (this.transactionsToSendInDb.length > 0 && this.selectedCustomer && areValidQuantitiesSelected)
     },
     productsToDisplayInBillComputed() {

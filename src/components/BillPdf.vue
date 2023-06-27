@@ -31,6 +31,8 @@
           </div>
         </div>
 
+        <div>Facture éditée le : {{billDate}}</div>
+
         <v-simple-table class="table">
           <template v-slot:default>
             <thead>
@@ -67,8 +69,9 @@
         </v-simple-table>
 
         <footer class="footer" >
-          <p>© 2018 Gandalf</p>
+          <p>© 2023 Stock management</p>
         </footer>
+        <br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/><br/>
       </section>
     </VueHtml2pdf>
   </div>
@@ -76,7 +79,8 @@
 
 <script>
 import VueHtml2pdf from 'vue-html2pdf'
-import Constants from "@/constants";
+import Constants from "@/constants"
+import Moment from 'moment'
 
 export default {
   name: "BillPdf",
@@ -89,7 +93,8 @@ export default {
       allTransactionByCustomersAndBillId: [],
       company: '',
       siret: '',
-      phoneNumber: ''
+      phoneNumber: '',
+      billDate: ''
     }
   },
   methods: {
@@ -111,6 +116,7 @@ export default {
   async mounted() {
     let data1;
     let data2;
+    let data3;
     try {
       data1 = await this.$store.state.axiosBaseUrl.get(`customers/${this.$route?.params.customerId}`, {
         headers: {
@@ -128,6 +134,15 @@ export default {
         }
       })
       this.allTransactionByCustomersAndBillId = data2.data
+
+      data3 = await this.$store.state.axiosBaseUrl.get(`bills/${this.$route?.params.billId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + localStorage.getItem("token")
+        }
+      })
+      this.billDate = Moment(data3.data[0]).utc().format('DD/MM/YYYY')
+
       this.generateReport()
     } catch (e) {
       console.error(e)
@@ -165,7 +180,7 @@ export default {
   margin: auto;
   width: 90%;
   padding: 40px;
-  border: solid;
+/*  border: solid;*/
 }
 
 .client {
@@ -177,7 +192,7 @@ export default {
   padding: 40px;
   width: 50%;
   margin-top: 100px;
-  font-family: Arial, sans-serif;
+
 }
 
 .header {
@@ -207,8 +222,8 @@ export default {
 }
 
 .footer {
-  position: relative;
-  top: 50px;
+  position: absolute;
+  bottom: 20px;
 }
 
 </style>

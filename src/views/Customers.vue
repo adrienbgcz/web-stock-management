@@ -26,7 +26,8 @@
     <div class="my-2">
       <PopinForm :input-labels-and-api-name="addCustomerLabelsAndApiName" :element-to-add-in-db="'customer'"
                  :title="'Ajouter un partenaire'" :icon="'mdi-account-outline'" :confirmation-message="'Le partenaire a bien été ajouté'"
-                 :error-message="'Une erreur est survenue pendant l\'ajout du partenaire'"/>
+                 :error-message="'Une erreur est survenue pendant l\'ajout du partenaire'"
+      />
     </div>
 
   </div>
@@ -73,11 +74,11 @@ export default {
     }
   },
   computed: {
-    customersList() {
-      return this.customers
-    },
     addCustomerLabelsAndApiName() {
       return [this.customerName, this.siret, this.phoneNumber]
+    },
+    customersList() {
+      return this.customers
     },
     filteredCustomersList() {
       return this.filteredCustomers

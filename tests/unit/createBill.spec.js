@@ -16,41 +16,41 @@ const customersData = [
     {"id": 2, "company_name": "company2", "siret": "2222222222", "phone_number": "2222222222"}
 ]
 
+let store;
+let options;
+let state = {
+    products: [],
+    customers: []
+}
+
+let products = []
+let customers = []
+
+const mockGetProducts = jest.spyOn(CreateBill.methods, 'getProducts').mockImplementation(() => {
+    products = productsData
+    state.products = products
+})
+
+const mockGetCustomers = jest.spyOn(CreateBill.methods, 'getCustomers').mockImplementation(() => {
+    customers = customersData
+    state.customers = customers
+})
+
+const mockCreateBillAndGetBillId = jest.spyOn(CreateBill.methods, 'createBillAndGetBillId').mockImplementation(() => {
+    throw ("error")
+})
+
+const mockPostTransactions = jest.spyOn(CreateBill.methods, 'postTransactions')
+
+const breakpoint = {
+    init: jest.fn(),
+    xs: true,
+}
+const vuetify = new Vuetify()
+vuetify.framework.breakpoint = breakpoint
+
+
 describe('CreateBill.vue', () => {
-    let store;
-    let options;
-    let state = {
-        products: [],
-        customers: []
-    }
-
-    let products = []
-    let customers = []
-
-    const mockGetProducts = jest.spyOn(CreateBill.methods, 'getProducts').mockImplementation(() => {
-        products = productsData
-        state.products = products
-    })
-
-    const mockGetCustomers = jest.spyOn(CreateBill.methods, 'getCustomers').mockImplementation(() => {
-        customers = customersData
-        state.customers = customers
-    })
-
-    const mockCreateBillAndGetBillId = jest.spyOn(CreateBill.methods, 'createBillAndGetBillId').mockImplementation(() => {
-        throw ("error")
-    })
-
-    const mockPostTransactions = jest.spyOn(CreateBill.methods, 'postTransactions')
-
-    const breakpoint = {
-        init: jest.fn(),
-        xs: true,
-    }
-    const vuetify = new Vuetify()
-    vuetify.framework.breakpoint = breakpoint
-
-
 
     describe('getProductsAndCustomers', () => {
         beforeEach(() => {

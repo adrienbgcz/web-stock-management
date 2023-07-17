@@ -8,8 +8,9 @@
         height="auto"
     >
 
-      <v-toolbar-title v-if="userConnected">Bonjour {{ userConnected }} ! <div class="disconnectionButton mt-1" @click="disconnection">Déconnexion</div></v-toolbar-title>
-      <v-toolbar-title v-else>Stock Management</v-toolbar-title>
+      <v-toolbar-title v-if="userConnected && !$vuetify.breakpoint.xs">Bonjour {{ userConnected }} ! <div class="disconnectionButton mt-1" @click="disconnection">Déconnexion</div></v-toolbar-title>
+      <v-icon v-if="$vuetify.breakpoint.xs" @click="disconnection">mdi-logout</v-icon>
+      <v-toolbar-title v-if="!$vuetify.breakpoint.xs && !userConnected">Stock Management</v-toolbar-title>
 
 
       <v-spacer></v-spacer>
@@ -17,7 +18,8 @@
       <router-link to="/products">
         <v-btn color="#6750A4">
           <div>
-            <v-icon x-large>mdi-devices</v-icon>
+            <v-icon v-if="$vuetify.breakpoint.xs" >mdi-devices</v-icon>
+            <v-icon v-else x-large>mdi-devices</v-icon>
             <div class="mt-1">Produits</div>
           </div>
         </v-btn>
@@ -29,7 +31,8 @@
       <router-link to="/customers">
         <v-btn color="#6750A4">
           <div>
-            <v-icon x-large>mdi-account-group</v-icon>
+            <v-icon v-if="$vuetify.breakpoint.xs" >mdi-account-group</v-icon>
+            <v-icon v-else x-large>mdi-account-group</v-icon>
             <div class="mt-1">Répertoire</div>
           </div>
         </v-btn>
@@ -41,8 +44,10 @@
       <router-link to="/buy-or-sale">
         <v-btn color="#6750A4">
           <div>
-            <v-icon x-large>mdi-file-document-plus</v-icon>
-            <div class="mt-1">Editer une facture</div>
+            <v-icon v-if="$vuetify.breakpoint.xs">mdi-file-document-plus</v-icon>
+            <v-icon v-else x-large>mdi-file-document-plus</v-icon>
+            <div class="mt-1" v-if="$vuetify.breakpoint.xs">Facture</div>
+            <div class="mt-1" v-else>Editer une facture</div>
           </div>
         </v-btn>
       </router-link>

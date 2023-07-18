@@ -42,7 +42,7 @@
                               @change="validInput(inputInfo.type, inputLabelsFormatted[inputInfo.apiName].value, inputInfo.apiName, inputInfo.label); previewAddedPicture($event)"
                 ></v-file-input>
                 <v-text-field v-else
-                              :type="inputInfo.type === 'password' ? 'password' : 'text'"
+                              :type="inputInfo.type === 'password' || 'passwordConfirmation' ? 'password' : 'text'"
                               :label="inputInfo.label + ' *'"
                               :placeholder="inputInfo.label"
                               :error-messages="firstDisplay ? '' : inputLabelsFormatted[inputInfo.apiName] ? !inputLabelsFormatted[inputInfo.apiName].isValidatedData ? inputLabelsFormatted[inputInfo.apiName].errorMessage : '' : ''"

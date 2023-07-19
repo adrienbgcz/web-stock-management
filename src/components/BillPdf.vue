@@ -108,7 +108,7 @@ export default {
   computed: {
     totalPrice() {
       let total = 0
-      this.allTransactionByCustomersAndBillId.forEach(transaction => total += transaction.price)
+      this.allTransactionByCustomersAndBillId.forEach(transaction => total += (transaction.price * transaction.quantity))
       return total
     }
   },
@@ -118,7 +118,7 @@ export default {
     let data2;
     let data3;
     try {
-      data1 = await this.$store.state.axiosBaseUrl.get(`customers/${this.$route?.params.customerId}`, {
+      data1 = await this.$store.state.axiosBaseUrl.get(`customers/${this.$route?.params.customerId}/user/${localStorage.userId}`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ' + localStorage.getItem("token")

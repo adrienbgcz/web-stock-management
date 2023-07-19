@@ -41,7 +41,7 @@ export default {
     let data2;
 
     try {
-        data1 = await this.$store.state.axiosBaseUrl.get(`customers/${this.$route?.params.id}`, {
+        data1 = await this.$store.state.axiosBaseUrl.get(`customers/${this.$route?.params.id}/user/${localStorage.userId}`, {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + localStorage.getItem("token")

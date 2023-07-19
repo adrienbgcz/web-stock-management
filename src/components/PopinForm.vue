@@ -21,7 +21,8 @@
           <v-container>
             <v-row>
               <v-col class="text-center">
-                Identifiants incorrects !
+                {{ connectionOrRegistrationError }}
+<!--                Identifiants incorrects !-->
               </v-col>
             </v-row>
           </v-container>
@@ -133,8 +134,8 @@ export default {
     samePasswords: false,
     displayConnectionErrorMessage: false,
     isLoading: false,
-    isError: false
-
+    isError: false,
+    connectionOrRegistrationError: ''
   }),
   props: {
     inputLabelsAndApiName: {
@@ -331,14 +332,17 @@ export default {
             if(response.data.user) await this.$router.replace({path: '/products'})
           } catch(e) {
             console.error(e)
+            this.displayConnectionErrorMessage = true
             if(e.response.status === 401) {
-              this.displayConnectionErrorMessage = true
+              this.connectionOrRegistrationError = e.response.data.message
+            } else if (e.response.status === 400) {
+                this.connectionOrRegistrationError = e.response.data
             }
           }
         }
         this.isLoading = false
 
-        if(this.elementToAddInDb !== 'userConnection') {
+        if(this.elementToAddInDb !== 'userConnection' && this.elementToAddInDb !== 'user') {
           this.displayConfirmation = true
           this.dialog = false
         }
